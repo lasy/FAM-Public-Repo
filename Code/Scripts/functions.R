@@ -1,8 +1,8 @@
 
 
-source('functions_HMM.R')
-source('functions_for_plots.R')
-source('functions_for_data_cleaning.R')
+source('Scripts/functions_HMM.R')
+source('Scripts/functions_for_plots.R')
+source('Scripts/functions_for_data_cleaning.R')
 
 
 # UTILITIES

@@ -1,12 +1,15 @@
 #### HMM
 
-sep.hmm = '_'
+hmm_par = list()
 
+hmm_par$sep.hmm = '_'
 
-cycle.states = c('hM','lM','lE','hE','O','Rise','hP','Ep','lP','end')
-cycle.states.colors = c(dark.red,light.red,light.blue,blue,'black','lightgoldenrod3',yellow,'darkseagreen3',light.yellow,'gray')
+  
 
-cycle.states.dict = data.frame(states=  cycle.states, colors = cycle.states.colors, stringsAsFactors = FALSE)
+hmm_par$cycle.states = c('hM','lM','lE','hE','O','Rise','hP','Ep','lP','end')
+hmm_par$cycle.states.colors = c(viz_cols$dark.red,viz_cols$light.red,viz_cols$light.blue,viz_cols$blue,'black','lightgoldenrod3',viz_cols$yellow,'darkseagreen3',viz_cols$light.yellow,'gray')
+
+hmm_par$cycle.states.dict = data.frame(states=  hmm_par$cycle.states, colors = hmm_par$cycle.states.colors, stringsAsFactors = FALSE)
 
 
 #                               hM   lM   lE  hE  O  Rise hP   Ep  lP  end
@@ -22,21 +25,21 @@ cycle.states.transProbs.lP  = c(0   ,0   ,0  ,0  ,0  ,0  ,0   ,0  ,0.5 ,0.5)
 cycle.states.transProbs.end = c(0   ,0   ,0  ,0  ,0  ,0  ,0   ,0  ,0   ,1)
 
 
-cycle.states.transProbs = c()
-for(s in cycle.states){
-  eval(parse(text = paste0('cycle.states.transProbs = c(cycle.states.transProbs,cycle.states.transProbs.',s,')')))
+hmm_par$cycle.states.transProbs = c()
+for(s in hmm_par$cycle.states){
+  eval(parse(text = paste0('hmm_par$cycle.states.transProbs = c(hmm_par$cycle.states.transProbs, cycle.states.transProbs.',s,')')))
 }
 
-cycle.states.transProbs = matrix(cycle.states.transProbs,10, byrow = TRUE, dimnames = list(cycle.states, cycle.states))
+hmm_par$cycle.states.transProbs = matrix(hmm_par$cycle.states.transProbs,10, byrow = TRUE, dimnames = list(hmm_par$cycle.states, hmm_par$cycle.states))
 
-for(s in cycle.states){
+for(s in hmm_par$cycle.states){
   eval(parse(text = paste0('rm(cycle.states.transProbs.',s,')')))
 }
 
 
 ## MUCUS
 
-mucus.hmm.symbols = c('NA','No','f','F','s','end')
+hmm_par$mucus.hmm.symbols = c('NA','No','f','F','s','end')
 
 ###########################  NA   No   f    F    s    end
 emissionProbs.mucus.hM   = c(0.45,0.4 ,0.05,0.05,0.05,0) 
@@ -51,16 +54,16 @@ emissionProbs.mucus.lP   = c(0.4 ,0.4 ,0.05,0.05,0.1 ,0)
 emissionProbs.mucus.end  = c(0   ,0   ,0   ,0   ,0   ,1) 
 
 
-emissionProbs.mucus = c()
-for(s in cycle.states){
-  eval(parse(text = paste0('emissionProbs.mucus = c(emissionProbs.mucus,emissionProbs.mucus.',s,')')))
+hmm_par$emissionProbs.mucus = c()
+for(s in hmm_par$cycle.states){
+  eval(parse(text = paste0('hmm_par$emissionProbs.mucus = c(hmm_par$emissionProbs.mucus,emissionProbs.mucus.',s,')')))
 }
 
-emissionProbs.mucus = matrix(emissionProbs.mucus,
-                             nrow = length(cycle.states), ncol = length(mucus.hmm.symbols)
-                             , byrow = TRUE, dimnames = list(cycle.states, mucus.hmm.symbols))
+hmm_par$emissionProbs.mucus = matrix(hmm_par$emissionProbs.mucus,
+                             nrow = length(hmm_par$cycle.states), ncol = length(hmm_par$mucus.hmm.symbols)
+                             , byrow = TRUE, dimnames = list(hmm_par$cycle.states, hmm_par$mucus.hmm.symbols))
 
-for(s in cycle.states){
+for(s in hmm_par$cycle.states){
   eval(parse(text = paste0('rm(emissionProbs.mucus.',s,')')))
 }
 
@@ -69,7 +72,7 @@ for(s in cycle.states){
 
 ## BLEEDING
 
-bleeding.hmm.symbols = c('NA','3','2','1','end')
+hmm_par$bleeding.hmm.symbols = c('NA','3','2','1','end')
 
 ###########################     NA   3   2    1   end 
 emissionProbs.bleeding.hM   = c(0.2 ,0.6 ,0.19,0.01,0) 
@@ -84,17 +87,17 @@ emissionProbs.bleeding.lP   = c(0.60,0.05,0.05,0.3 ,0)
 emissionProbs.bleeding.end  = c(0   ,0   ,0   ,0   ,1) 
 
 
-emissionProbs.bleeding = c()
-for(s in cycle.states){
-  eval(parse(text = paste0('emissionProbs.bleeding = c(emissionProbs.bleeding,emissionProbs.bleeding.',s,')')))
+hmm_par$emissionProbs.bleeding = c()
+for(s in hmm_par$cycle.states){
+  eval(parse(text = paste0('hmm_par$emissionProbs.bleeding = c(hmm_par$emissionProbs.bleeding,emissionProbs.bleeding.',s,')')))
 }
 
-emissionProbs.bleeding = matrix(emissionProbs.bleeding,
-                                nrow = length(cycle.states), ncol = length(bleeding.hmm.symbols)
-                                , byrow = TRUE, dimnames = list(cycle.states, bleeding.hmm.symbols))
+hmm_par$emissionProbs.bleeding = matrix(hmm_par$emissionProbs.bleeding,
+                                nrow = length(hmm_par$cycle.states), ncol = length(hmm_par$bleeding.hmm.symbols)
+                                , byrow = TRUE, dimnames = list(hmm_par$cycle.states, hmm_par$bleeding.hmm.symbols))
 
 
-for(s in cycle.states){
+for(s in hmm_par$cycle.states){
   eval(parse(text = paste0('rm(emissionProbs.bleeding.',s,')')))
 }
 
@@ -103,7 +106,7 @@ for(s in cycle.states){
 
 ## CERVIX + FEELING
 
-cervix.hmm.symbols = c('NA','FD','FW','FVW','CC','CM','CH','end')
+hmm_par$cervix.hmm.symbols = c('NA','FD','FW','FVW','CC','CM','CH','end')
 
 ###########################   NA   FD   FW   FVW  CC   CM   CH  end 
 emissionProbs.cervix.hM   = c(10  ,10  ,10  ,10  ,10  ,10  ,10 ,0) ; emissionProbs.cervix.hM = emissionProbs.cervix.hM/sum(emissionProbs.cervix.hM)
@@ -118,16 +121,16 @@ emissionProbs.cervix.lP   = c(10  ,8   ,2   ,1   ,8   ,2   ,1  ,0) ; emissionPro
 emissionProbs.cervix.end  = c(0   ,0   ,0   ,0   ,0   ,0   ,0   ,1) 
 
 
-emissionProbs.cervix = c()
-for(s in cycle.states){
-  eval(parse(text = paste0('emissionProbs.cervix = c(emissionProbs.cervix,emissionProbs.cervix.',s,')')))
+hmm_par$emissionProbs.cervix = c()
+for(s in hmm_par$cycle.states){
+  eval(parse(text = paste0('hmm_par$emissionProbs.cervix = c(hmm_par$emissionProbs.cervix,emissionProbs.cervix.',s,')')))
 }
 
-emissionProbs.cervix = matrix(emissionProbs.cervix,
-                              nrow = length(cycle.states), ncol = length(cervix.hmm.symbols)
-                              , byrow = TRUE, dimnames = list(cycle.states, cervix.hmm.symbols))
+hmm_par$emissionProbs.cervix = matrix(hmm_par$emissionProbs.cervix,
+                              nrow = length(hmm_par$cycle.states), ncol = length(hmm_par$cervix.hmm.symbols)
+                              , byrow = TRUE, dimnames = list(hmm_par$cycle.states, hmm_par$cervix.hmm.symbols))
 
-for(s in cycle.states){
+for(s in hmm_par$cycle.states){
   eval(parse(text = paste0('rm(emissionProbs.cervix.',s,')')))
 }
 
@@ -137,26 +140,26 @@ for(s in cycle.states){
 ##############################
 # COMBINATION BLEEDING + MUCUS
 
-mucus.hmm.symbols
-bleeding.hmm.symbols
+hmm_par$mucus.hmm.symbols
+hmm_par$bleeding.hmm.symbols
 
-emissionProbs.mucus
-emissionProbs.bleeding
+hmm_par$emissionProbs.mucus
+hmm_par$emissionProbs.bleeding
 
 
-comb.hmm.symbols = as.vector(outer(mucus.hmm.symbols, bleeding.hmm.symbols, paste, sep=sep.hmm))
+hmm_par$comb.hmm.symbols = as.vector(outer(hmm_par$mucus.hmm.symbols, hmm_par$bleeding.hmm.symbols, paste, sep=hmm_par$sep.hmm))
 
-emissionProbs.comb = c()
-for(si in 1:length(cycle.states)){
-  emissionProbs.comb.si = as.vector(emissionProbs.mucus[si,] %*% t(emissionProbs.bleeding[si,]))
-  emissionProbs.comb = c(emissionProbs.comb, emissionProbs.comb.si)
+hmm_par$emissionProbs.comb = c()
+for(si in 1:length(hmm_par$cycle.states)){
+  emissionProbs.comb.si = as.vector(hmm_par$emissionProbs.mucus[si,] %*% t(hmm_par$emissionProbs.bleeding[si,]))
+  hmm_par$emissionProbs.comb = c(hmm_par$emissionProbs.comb, emissionProbs.comb.si)
 }
 
-emissionProbs.comb
+hmm_par$emissionProbs.comb
 
-emissionProbs.comb = matrix(emissionProbs.comb,
-                            nrow = length(cycle.states), ncol = length(comb.hmm.symbols)
-                            , byrow = TRUE, dimnames = list(cycle.states, comb.hmm.symbols))
+hmm_par$emissionProbs.comb = matrix(hmm_par$emissionProbs.comb,
+                            nrow = length(hmm_par$cycle.states), ncol = length(hmm_par$comb.hmm.symbols)
+                            , byrow = TRUE, dimnames = list(hmm_par$cycle.states, hmm_par$comb.hmm.symbols))
 
 rm(emissionProbs.comb.si)
 
@@ -166,25 +169,25 @@ rm(emissionProbs.comb.si)
 # COMBINATION  MUCUS + BLEEDING + CERVIX&FEEL
 
 
-comb.hmm.symbols
-cervix.hmm.symbols
+hmm_par$comb.hmm.symbols
+hmm_par$cervix.hmm.symbols
 
-emissionProbs.comb
-emissionProbs.cervix
+hmm_par$emissionProbs.comb
+hmm_par$emissionProbs.cervix
 
-MBC.hmm.symbols = as.vector(outer(comb.hmm.symbols, cervix.hmm.symbols, paste, sep=sep.hmm))
+hmm_par$MBC.hmm.symbols = as.vector(outer(hmm_par$comb.hmm.symbols, hmm_par$cervix.hmm.symbols, paste, sep=hmm_par$sep.hmm))
 
-emissionProbs.MBC = c()
-for(si in 1:length(cycle.states)){
-  emissionProbs.MBC.si = as.vector(emissionProbs.comb[si,] %*% t(emissionProbs.cervix[si,]))
-  emissionProbs.MBC = c(emissionProbs.MBC, emissionProbs.MBC.si)
+hmm_par$emissionProbs.MBC = c()
+for(si in 1:length(hmm_par$cycle.states)){
+  emissionProbs.MBC.si = as.vector(hmm_par$emissionProbs.comb[si,] %*% t(hmm_par$emissionProbs.cervix[si,]))
+  hmm_par$emissionProbs.MBC = c(hmm_par$emissionProbs.MBC, emissionProbs.MBC.si)
 }
 
-emissionProbs.MBC
+hmm_par$emissionProbs.MBC
 
-emissionProbs.MBC = matrix(emissionProbs.MBC,
-                           nrow = length(cycle.states), ncol = length(MBC.hmm.symbols)
-                           , byrow = TRUE, dimnames = list(cycle.states, MBC.hmm.symbols))
+hmm_par$emissionProbs.MBC = matrix(hmm_par$emissionProbs.MBC,
+                           nrow = length(hmm_par$cycle.states), ncol = length(hmm_par$MBC.hmm.symbols)
+                           , byrow = TRUE, dimnames = list(hmm_par$cycle.states, hmm_par$MBC.hmm.symbols))
 
 
 rm(emissionProbs.MBC.si)
@@ -193,8 +196,8 @@ rm(emissionProbs.MBC.si)
 
 ## FROM TEMP CURVE FITTING
 
-temp.hmm.symbols = c('Foll','BOvu','Ovu', 'AOvu','Rise','High','Drop','end')
-temp.hmm.colors = c(NA,'gray','black','gray','lightgoldenrod3',yellow,yellow.transp,'gray')
+hmm_par$temp.hmm.symbols = c('Foll','BOvu','Ovu', 'AOvu','Rise','High','Drop','end')
+hmm_par$temp.hmm.colors = c(NA,'gray','black','gray','lightgoldenrod3',viz_cols$yellow,viz_cols$yellow.transp,'gray')
 
 
 #######################     Foll BOvu Ovu  AOvu Rise High  Drop end 
@@ -210,20 +213,23 @@ emissionProbs.temp.lP   = c(1   ,1   ,1    ,1   ,1   ,1    ,10  ,0)
 emissionProbs.temp.end  = c(0   ,0   ,0    ,0   ,0   ,0    ,0   ,1) 
 
 
-emissionProbs.temp = c()
-for(s in cycle.states){
-  eval(parse(text = paste0('emissionProbs.temp = c(emissionProbs.temp,emissionProbs.temp.',s,')')))
+hmm_par$emissionProbs.temp = c()
+for(s in hmm_par$cycle.states){
+  eval(parse(text = paste0('hmm_par$emissionProbs.temp = c(hmm_par$emissionProbs.temp,emissionProbs.temp.',s,')')))
 }
 
-emissionProbs.temp = matrix(emissionProbs.temp,
-                                nrow = length(cycle.states), ncol = length(temp.hmm.symbols)
-                                , byrow = TRUE, dimnames = list(cycle.states, temp.hmm.symbols))
+hmm_par$emissionProbs.temp = matrix(hmm_par$emissionProbs.temp,
+                                nrow = length(hmm_par$cycle.states), ncol = length(hmm_par$temp.hmm.symbols)
+                                , byrow = TRUE, dimnames = list(hmm_par$cycle.states, hmm_par$temp.hmm.symbols))
 
 
-emissionProbs.temp = emissionProbs.temp/apply(emissionProbs.temp,1,sum)
+hmm_par$emissionProbs.temp = hmm_par$emissionProbs.temp/apply(hmm_par$emissionProbs.temp,1,sum)
 
 
-for(s in cycle.states){
+for(s in hmm_par$cycle.states){
   eval(parse(text = paste0('rm(emissionProbs.temp.',s,')')))
 }
+
+
+rm(s, si)
 
