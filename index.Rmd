@@ -1,0 +1,43 @@
+---
+title: Assessment of Menstrual Health Status and Evolution through Mobile Apps for Fertility Awareness
+author: "Laura Symul, Katarzyna Wac, Paula Hillard and Marcel Salathé"
+date: "2019"
+output: 
+  bookdown::html_document2: 
+    theme: flatly
+    highlight: haddock
+    toc: no
+    toc_float: true
+    toc_depth: 5
+    number_sections: false
+    fig_caption: true
+
+---
+
+![](Figures Tables Media/Media/cycles - banner.png)
+
+# Pre-print
+The current version of the paper can be downloaded on [bioRxiv](https://www.biorxiv.org/content/10.1101/385054v1)
+
+
+# Peer-reviewed published version
+Coming soon
+
+# Figures, Code and Data
+
+Code and aggregated data to reproduce the figures can be found on the github repo [FAM](LINK)
+
+# Contact
+Any question or request can be addressed at Laura Symul 
+
+[lsymul@stanford.edu](mailto:lsymul@stanford.edu) 
+
+[laurasymul@gmail.com](mailto:laurasymul@gmail.com) 
+
+[lsy.works](http://lsy.works/)
+
+[twitter](https://twitter.com/LauraSymul) @LauraSymul
+
+![](Figures Tables Media/Media/cycles - banner.png)
+
+
