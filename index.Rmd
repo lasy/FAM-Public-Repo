@@ -20,12 +20,15 @@ output:
 The current version of the paper can be downloaded on [bioRxiv](https://www.biorxiv.org/content/10.1101/385054v1)
 
 
-# Peer-reviewed published version
+# Peer-reviewed published article
 Coming soon
 
 # Figures, Code and Data
 
-Code and aggregated data to reproduce the figures can be found on the github repo [FAM](LINK)
+Code and aggregated data to reproduce the figures can be found on the github repo [FAM-Public-Repo](https://github.com/lasy/FAM-Public-Repo).
+
+Specifically, click [here]() for the rendered [Rmd]() (R code) used to generate the Figures.
+
 
 # Contact
 Any question or request can be addressed at Laura Symul 
