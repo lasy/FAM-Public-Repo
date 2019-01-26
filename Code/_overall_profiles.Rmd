@@ -1,0 +1,33 @@
+---
+title: "Overall profiles of observations"
+author: "Laura Symul"
+date: "1/25/2019"
+output: html_document
+---
+
+# Overall observation profiles
+
+```{r overall_profiles setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+```
+
+
+```{r overall_profiles load libraries functions etc, results = FALSE, eval = TRUE}
+rm(list=ls())
+source("Scripts/libraries.R")
+source("Scripts/variables.R")
+source("Scripts/functions.R")
+```
+
+
+## Kindara
+
+```{r overall_profiles load Kindara data}
+# TO DO
+```
+
+
+
+## Sympto
+
+

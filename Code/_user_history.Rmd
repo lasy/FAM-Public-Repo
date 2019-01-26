@@ -1,0 +1,76 @@
+---
+title: "user history"
+author: "Laura Symul"
+date: "1/25/2019"
+output: html_document
+---
+
+# Examples of user history
+
+```{r user_history setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+```
+
+
+```{r user_history load libraries functions etc, results = FALSE, eval = TRUE}
+rm(list=ls())
+source("Scripts/libraries.R")
+source("Scripts/variables.R")
+source("Scripts/functions.R")
+```
+
+## Kindara
+
+```{r user_history load Kindara data}
+
+
+
+```
+
+
+
+
+## Sympto
+
+```{r user_history load Sympto data}
+load(paste0(IO$sympto_data_02_processed,'cycledays.Rdata'), verbose = TRUE)
+```
+
+
+```{r user_history selecting users with over 50 cycles}
+agg = aggregate(cycle_nb ~ user_id, cycledays,lu)
+j = which(agg$cycle_nb >= 50)
+
+user_ids = agg$user_id[j]
+rm(j, agg)
+```
+
+
+```{r user_history plotting their tracking history and selecting interesting ones}
+for(u in user_ids[1:10]){
+	k = which(cycledays$user_id == u)
+	plot.tracking.history(d = cycledays[k,], show_goal = TRUE, relative_date = TRUE)
+}
+rm(u, k)
+```
+
+
+```{r user_history saving the selected one}
+
+u = 1226
+k = which(cycledays$user_id == u)
+plot.tracking.history(d = cycledays[k,], show_goal = TRUE, relative_date = TRUE)
+
+cycledays_sympto_user_history = cycledays[k,]
+
+save(cycledays_sympto_user_history,file = paste0(IO$restricted_figure_data,"history_sympto.Rdata"))
+
+rm(u, k, cycledays_sympto_user_history, cycledays, user_ids)
+
+```
+
+
+
+
+
+

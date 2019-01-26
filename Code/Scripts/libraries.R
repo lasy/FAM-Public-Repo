@@ -1,16 +1,21 @@
 # libraries
 
 package_list = c('data.table',
-              'hexbin', 
-              'ggplot2', 
-              'ggthemes',
-              'ggridges',
-              'scales',
-              'lubridate',
-              'dplyr',
-              'HMM',
-              'reshape')
-
+                 'hexbin', 
+                 'ggplot2', 
+                 'ggthemes',
+                 'ggridges',
+                 'scales',
+                 'lubridate',
+                 'dplyr',
+                 'HMM',
+                 'reshape',
+                 'tictoc',
+                 'parallel',
+                 'doParallel',
+                 'stringr',
+                 'plotrix',
+                 'chron')
 
 pckgs = installed.packages()
 

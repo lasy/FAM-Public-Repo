@@ -1,0 +1,11 @@
+base
+data.table
+hexbin
+ggplot2
+ggthemes
+ggridges
+scales
+lubridate
+dplyr
+HMM
+reshape

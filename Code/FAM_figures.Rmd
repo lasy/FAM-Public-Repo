@@ -6,34 +6,307 @@ output:
   bookdown::html_document2: 
     theme: flatly
     highlight: haddock
-    toc: no
+    toc: yes
     toc_float: true
     toc_depth: 5
-    number_sections: false
+    number_sections: true
     fig_caption: true
 
 ---
 
-```{r load libraries functions etc}
+
+
+```{r setup setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+```
+
+
+```{r load libraries functions etc, results = FALSE, warnings =FALSE,  eval = TRUE, cache = FALSE}
 source("Scripts/libraries.R")
 source("Scripts/variables.R")
 source("Scripts/functions.R")
 ```
 
 
-
-# Figure 1
+# User history examples
 
 ## History Kindara user
 
 ```{r 1A load data}
+# TO DO
+```
+
+```{r 1A}
+# TO DO
+```
+
+## History Sympto user
+
+
+```{r 1B load data}
+load(file = paste0(IO$restricted_figure_data,"history_sympto.Rdata"), verbose = TRUE)
+```
+
+```{r 1B}
+
+plot.tracking.history(d = cycledays_sympto_user_history)
+u = unique(cycledays_sympto_user_history$user_id)
+
+pdf(paste0(IO$panels,'1B_history_sympto_example_',u,'.pdf'), useDingbats = FALSE, width = viz$pdf.full.width*0.75, height = viz$pdf.full.width/5)
+plot.tracking.history(d = cycledays_sympto_user_history, show_goal = TRUE, relative_date = TRUE)
+dev.off()
+
+rm(cycledays_sympto_user_history, u)
 
 ```
 
 
-# Figure 2
+# Demographics (Fig 2A, S1C)
 
-# Figure 3
+```{r 2A load data}
+#sympto
+load(file = paste0(IO$restricted_figure_data,"users_demo_sympto.Rdata"), verbose = TRUE)
+# kindara 
+load(file = paste0(IO$restricted_figure_data,"users_demo_kindara.Rdata"), verbose = TRUE)
+
+```
+
+## Sympto
+```{r demographics table}
+summary(users_demo_sympto)
+round(apply(users_demo_sympto, 2, sd, na.rm = TRUE), digits = 2)
+100 - round(apply(users_demo_sympto, 2, function(x) sum(is.na(x)))/nrow(users_demo_sympto)*100)
+```
+
+## Kindara
+
+```{r user_demographics summary of demographics kindara}
+round(mean(users_demo_kindara$age_registration, na.rm = TRUE), digits = 1)
+round(sd(users_demo_kindara$age_registration, na.rm = TRUE), digits = 1)
+round(100 - (sum(is.na(users_demo_kindara$age_registration))/nrow(users_demo_kindara)*100))
+```
+
+
+## Figures 
+```{r plot_demographics_histogram}
+plot_demographics_histogram = function(x, xlim = c(10, 60), ylim = NA, xlab = "x"){
+  par(las = 1, mar = c(3, 3, 0.25, 2.5) + 0.1, mgp = c(1.6,0.6,0), tcl = -0.4, col.axis = 'gray60', col.lab = 'gray40')
+  breaks = min(x, na.rm = TRUE):(max(x, na.rm = TRUE)+1)-0.5
+  breaks = round(min(x, na.rm = TRUE)):round((max(x, na.rm = TRUE)+1))-0.5
+  h = hist(x, breaks = breaks, plot = FALSE)
+  if(any(is.na(ylim))){ylim = c(0,max(h$density)*1.03)}
+  plot(h$mids,h$counts/sum(h$counts), type = 'n', axes = FALSE, xlim = xlim, ylim = ylim,yaxs = 'i', xaxs = 'i',
+     xlab = xlab, ylab = '% of users', main = '')
+  at.x = seq(0,xlim[2]*1.5,by = 10)
+  axis(1, col = 'lightgray', col.ticks = 'lightgray')
+  at.y = seq(0,max(h$density),by = 0.01)
+  while(length(at.y) >= 10){at.y = at.y[rep(c(TRUE,FALSE))]}
+  axis(2, at = at.y , labels = 100*at.y, col = 'lightgray', col.ticks = 'lightgray')
+  abline(h = at.y, col = 'lightgray')
+  abline(v = at.x, col = 'lightgray')
+  polygon(c(h$mids,rev(h$mids)), c(h$counts/sum(h$counts),h$counts*0), col = viz_cols$colors_lsy[1], border = NA)
+  abline(v = median(x, na.rm = TRUE), lty = 2)
+  h = data.frame(x = h$mids, y = h$counts/sum(h$counts))
+  return(h)
+}
+```
+
+
+
+
+```{r 2A age now}
+
+x2 = users_demo_kindara$age_now
+h2 = plot_demographics_histogram(x = x2, xlim = c(10, 60), xlab = "Age at time of study")
+
+x = users_demo_sympto$age_now
+h = plot_demographics_histogram(x = x, xlim = c(10,60), ylim = c(0,0.08),xlab = 'Age at time of study')
+points(h2$x, h2$y, type = "l", col = "mediumseagreen")
+
+pdf.file = paste0(IO$panels,'2_demographics_age_now.pdf')
+pdf(pdf.file, width = 3.5, height = 2)
+h = plot_demographics_histogram(x = x, xlim = c(10,60), ylim = c(0,0.08),xlab = 'Age at time of study')
+points(h2$x, h2$y, type = "l", col = "mediumseagreen")
+dev.off()
+
+```
+
+
+```{r 2A age registration}
+
+x2 = users_demo_kindara$age_registration
+h2 = plot_demographics_histogram(x = x2, xlim = c(10, 60), xlab = "Age at registration")
+
+x = users_demo_sympto$age_registration
+h = plot_demographics_histogram(x = x, xlim = c(10,60), ylim = c(0,0.08) ,xlab = 'Age at registration')
+points(h2$x, h2$y, type = "l", col = "mediumseagreen")
+
+pdf.file = paste0(IO$panels,'2_demographics_age_registration.pdf')
+pdf(pdf.file, width = 3.5, height = 2)
+h = plot_demographics_histogram(x = x, xlim = c(10,60), ylim = c(0,0.08),xlab = 'Age at registration')
+points(h2$x, h2$y, type = "l", col = "mediumseagreen")
+abline(v = median(x2, na.rm = TRUE), lty = 4, col = "mediumseagreen" )
+dev.off()
+```
+
+
+```{r 2A weight}
+
+x = users_demo_sympto$kg
+plot_demographics_histogram(x = x, xlim = c(40,140),xlab = 'Weight (kg)')
+
+pdf.file = paste0(IO$panels,'2_demographics_weight.pdf')
+pdf(pdf.file, width = 3.5, height = 2)
+x = users_demo_sympto$kg
+plot_demographics_histogram(x = x, xlim = c(40,140),xlab = 'Weight (kg)')
+dev.off()
+```
+
+```{r 2A height}
+x = users_demo_sympto$cm
+plot_demographics_histogram(x = x, xlim = c(140,190),xlab = 'Height (cm)')
+
+pdf.file = paste0(IO$panels,'2_demographics_height.pdf')
+pdf(pdf.file, width = 3.5, height = 2)
+plot_demographics_histogram(x = x, xlim = c(140,190),xlab = 'Height (cm)')
+dev.off()
+```
+
+```{r S1C bmi}
+x = users_demo_sympto$bmi
+plot_demographics_histogram(x = x, xlim = c(0,50),xlab = 'BMI')
+
+pdf.file = paste0(IO$panels,'S1C_demographics_bmi.pdf')
+pdf(pdf.file, width = 3.5, height = 2)
+plot_demographics_histogram(x = x, xlim = c(0,50),xlab = 'BMI')
+dev.off()
+```
+```{r clean workspace after demographics}
+rm(users_demo_sympto, x, pdf.file)
+```
+
+
+# Tracking frequency
+
+## Kindara
+
+
+```{r tracking_frequency load Kindara data}
+
+load(paste0(IO$kindara_data_cycles,"03_standard_CYCLES.Rdata"), verbose = TRUE)
+CYCLES = CYCLES[(CYCLES$tracking_freq>=0) & (CYCLES$tracking_freq <= 1 ), ]
+
+```
+
+
+```{r function to extract histogram values from ggplot}
+get_hist <- function(p) {
+    d <- ggplot_build(p)$data[[1]]
+    data.frame(x = d$x, xmin = d$xmin, xmax = d$xmax, y = d$y, group = d$group)
+}
+```
+
+
+```{r tracking_frequency tracking frequency with sexual activity kindara}
+
+sex_activity = c("no logged sex","logged sex")
+
+CYCLES$has_logged_sex = factor(sex_activity[(CYCLES$n_sex_tot > 0)+1], levels = sex_activity)
+
+a = aggregate(tracking_freq ~ has_logged_sex, CYCLES, function(x) round(median(x),digits = 2))
+
+
+g = ggplot(CYCLES, aes(x = tracking_freq, fill = has_logged_sex))+ #coord_flip()+
+  geom_histogram(binwidth = 0.025,aes(y = stat(width*density))) +
+  geom_vline(data = a, aes(xintercept = tracking_freq, group = has_logged_sex), linetype = 2)+
+  geom_text(data = a, aes(x = tracking_freq, y = 0.25, label = tracking_freq , group = has_logged_sex), hjust = -0.5)+
+  facet_grid(. ~ has_logged_sex) + 
+  expand_limits(x = 0)+
+  scale_x_continuous(breaks = seq(0,1,by = 0.2))+
+  scale_y_continuous(labels = percent_format()) +
+  xlab("Tracking frequency (#day with obs. / cycle length)")+
+  ylab("% of cycles")+
+  guides(fill = FALSE)+
+  theme_light()
+g
+
+ggsave(filename = paste0(IO$panels,"2_tracking_frequency_kindara.pdf"),width = 4.5, height = 3)
+
+h_values = get_hist(g)
+h_values$group_name = sex_activity[h_values$group]
+h_values$tracking_freq = h_values$x
+h_values$perc_of_cycles = round(h_values$y * 100, digits = 2)
+save(h_values, file = paste0(IO$output_Rdata, "tracking_frequency_kindara.Rdata"))
+write.csv(h_values[,c("group_name","tracking_freq","perc_of_cycles")], file = paste0(IO$output_csv, "tracking_frequency_kindara.csv"), row.names = FALSE)
+
+rm(g, sex_activity, h_values, a, CYCLES)
+```
+
+
+## Sympto
+
+
+```{r tracking_frequency load sympto data}
+load(paste0(IO$sympto_data_02_standard_cycles,'cycles.Rdata'), verbose = TRUE)
+```
+
+
+```{r tracking_frequency tracking frequency for sympto - save frequency tables}
+breaks = seq(0,1,by = 0.025)
+N = length(breaks)
+
+par(las = 1, mar = c(3, 3, 0.25, 2.5) + 0.1, mgp = c(1.6,0.6,0), tcl = -0.4, col.axis = 'gray60', col.lab = 'gray40')
+
+for(goal in 1:4){
+  for(sex in c(TRUE, FALSE)){
+    tfh = plot_tracking_freq(cycles, goal, sex)
+    save(tfh, file = paste0(IO$output_Rdata,'tracking_frequency_sympto_',goal,'_',sex,'.Rdata'))
+    write.csv(tfh, file = paste0(IO$output_csv,'tracking_frequency_sympto_',goal,'_',sex,'.csv'))
+    
+    pdf.file = paste0(IO$panels,'2_tracking_frequency_sympto_',goal,'_',sex,'.pdf')
+    pdf(pdf.file, width = 4.5, height = 1.5)
+    par(las = 1, mar = c(3, 3, 0.25, 2.5) + 0.1, mgp = c(1.6,0.6,0), tcl = -0.4, col.axis = 'gray60', col.lab = 'gray40')
+    plot_tracking_freq(cycles, goal, sex)
+    dev.off()
+    
+  }
+}
+```
+
+# Observation profiles
+
+## Examples
+
+```{r observation profiles examples kindara}
+
+source("Scripts/_setup_Kindara.R")
+
+load('../../../../Apps/Kindara/Analysis/Rdata/Days/03 selected/day10-11.Rdata')
+
+cycle_ids = c('c3eeacfe8faf436db8bbc5972c25d208_18','c3eeacfe8faf436db8bbc5972c25d208_19','b4bf193f9ab94acead43a0eb1f6a0dcc_3','d71e51e3114b4b5fb9f7124115c901dd_4')
+
+for(cycle_id in cycle_ids){
+  k = which(days$cycle_id == cycle_id)
+  plot_cycle(subtable = days[k,], show_temp_time = FALSE, show_weights = TRUE, show_goal = FALSE)
+}
+
+cycle_ids = c('c3eeacfe8faf436db8bbc5972c25d208_19')
+
+for(cycle_id in cycle_ids){
+  k = which(days$cycle_id == cycle_id)
+  pdf(paste0(IO$panels,'3_cycle_example',cycle_id,'.pdf'), 
+      useDingbats = FALSE, width = viz$pdf.full.width/1.5, height = viz$pdf.full.width/3)
+  plot_cycle(subtable = days[k,], show_temp_time = FALSE, show_weights = TRUE, show_goal = FALSE)
+  dev.off()
+}
+
+
+rm(cycle_ids, cycle_id, k, days)
+
+```
+
+
+
 
 # Figure 4
 

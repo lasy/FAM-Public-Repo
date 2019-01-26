@@ -1,0 +1,82 @@
+---
+title: "User demographics"
+author: "Laura Symul"
+date: "1/25/2019"
+output: html_document
+---
+
+# Users demographics
+
+```{r user_demographics setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+```
+
+
+```{r user_demographics load libraries functions etc, results = FALSE, eval = TRUE}
+rm(list=ls())
+source("Scripts/libraries.R")
+source("Scripts/variables.R")
+source("Scripts/functions.R")
+```
+
+
+## Kindara
+
+```{r user_demographics load Kindara data}
+load(file = paste0(IO$kindara_data_accounts,'processed_cleaned_accounts_onefile.Rdata'), verbose = TRUE)
+```
+
+
+```{r user_demographics summary of demographics kindara}
+round(mean(accounts$age_registration, na.rm = TRUE), digits = 1)
+round(sd(accounts$age_registration, na.rm = TRUE), digits = 1)
+round(100 - (sum(is.na(accounts$age_registration))/nrow(accounts)*100))
+```
+
+
+```{r user_demographics saving the users_demo_kindara}
+users_demo_kindara = accounts[,c("age_registration","age_now")]
+save(users_demo_kindara,file = paste0(IO$restricted_figure_data,"users_demo_kindara.Rdata"))
+rm(accounts, users_demo_kindara)
+```
+
+## Sympto
+
+
+```{r user_demographics load sympto data}
+
+load(paste0(IO$sympto_data_02_processed,'users.Rdata'), verbose = TRUE)
+
+```
+
+```{r user_demographics summary of demographics symto}
+users_demo = users[,c("age_registration","age_now","menarche_year","cm","kg","bmi")]
+
+users_demo$cm_o = users_demo$cm
+users_demo$cm[which(users_demo$cm < 100)] = 100 + users_demo$cm[which(users_demo$cm < 100)] 
+
+users_demo$bmi_o = users_demo$bmi
+users_demo$bmi = users$kg / ((users_demo$cm/100)^2)
+
+
+summary(users_demo)
+
+round(apply(users_demo, 2, sd, na.rm = TRUE), digits = 2)
+
+100 - round(apply(users_demo, 2, function(x) sum(is.na(x)))/nrow(users)*100)
+
+```
+
+
+```{r user_demographics saving the user_demo_sympto}
+
+users_demo_sympto = users_demo
+save(users_demo_sympto,file = paste0(IO$restricted_figure_data,"users_demo_sympto.Rdata"))
+
+rm(users, users_demo, users_demo_sympto)
+
+```
+
+
+
+

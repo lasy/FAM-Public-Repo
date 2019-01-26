@@ -1,0 +1,39 @@
+---
+title: Analysis for "Assessment of Menstrual Health Status and Evolution through Mobile Apps for Fertility Awareness""
+author: "Laura Symul, Katarzyna Wac, Paula Hillard and Marcel Salathé"
+date: "2019"
+output: 
+  bookdown::html_document2: 
+    theme: flatly
+    highlight: haddock
+    toc: yes
+    toc_float: true
+    toc_depth: 5
+    number_sections: true
+    fig_caption: true
+
+---
+
+```{r setup setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+```
+
+
+```{r load libraries functions etc, results = FALSE, warnings = FALSE, eval = TRUE}
+source("Scripts/libraries.R")
+source("Scripts/variables.R")
+source("Scripts/functions.R")
+```
+
+
+
+
+```{r child = '_user_history.Rmd', cache=TRUE}
+```
+
+
+```{r child = '_user_demographics.Rmd', cache=TRUE}
+```
+
+
+
