@@ -1303,6 +1303,78 @@ h.c = plot_hist(x = x, bin.size = 0.05,
 dev.off()
 ```
 
+# HMM-state probabilities by cycle length
+
+```{r HMM-state probabilities by cycle length sympto}
+source("Scripts/_setup_Sympto.R")
+
+load(file = paste0(IO$output_Rdata, 'states_probabilities_by_cycle_length_sympto.Rdata'), verbose = TRUE)
+state_probs_sympto = state_probs
+
+g = ggplot(state_probs, aes(x = cycleday_from_ovu, y = prob, fill = state ))
+g = g + geom_area(position = 'identity', alpha = 0.7) + 
+  facet_grid(cycle_length_bin ~ ., scales = "free_y") +
+  scale_fill_manual(values = hmm_par$cycle.states.colors) +
+  xlab("Cycleday from estimated ovulation")+
+  ylab("Probabilities * Nb of cycles")
+
+g = g + theme_hc() + 
+  theme(strip.text.y = element_text(angle = 0),
+        strip.background = element_blank())
+g
+
+ggsave(filename = paste0(IO$panels,"S4_states_by_cycle_length_sympto.pdf"), plot = g, height = 5)
+
+```
+
+```{r HMM-state probabilities by cycle length kindara}
+
+source("Scripts/_setup_Kindara.R")
+
+load(file = paste0(IO$output_Rdata, 'states_probabilities_by_cycle_length_sympto.Rdata'), verbose = TRUE)
+state_probs_sympto = state_probs
+
+load(file = paste0(IO$output_Rdata, 'states_probabilities_by_cycle_length_kindara.Rdata'), verbose = TRUE)
+state_probs_kindara = state_probs
+
+g = ggplot(state_probs, aes(x = cycleday_from_ovu, y = prob, fill = state ))
+g = g + geom_area(position = 'identity', alpha = 0.7) + 
+  facet_grid(cycle_length_bin ~ ., scales = "free_y") +
+  scale_fill_manual(values = hmm_par$cycle.states.colors) +
+  xlab("Cycleday from estimated ovulation")+
+  ylab("Probabilities * Nb of cycles")
+
+g = g + theme_hc() + 
+  theme(strip.text.y = element_text(angle = 0),
+        strip.background = element_blank())
+g
+
+ggsave(filename = paste0(IO$panels,"S4_states_by_cycle_length_kindara.pdf"), plot = g, height = 5)
+
+```
+
+
+```{r HMM-state probabilities by cycle length combined}
+
+state_probs  = combine.sum.state.probs(state_probs_kindara, state_probs_sympto)
+
+g = ggplot(state_probs, aes(x = cycleday_from_ovu, y = prob, fill = state ))
+g = g + geom_area(position = 'identity', alpha = 0.7) + 
+  facet_grid(cycle_length_bin ~ ., scales = "fixed") +
+  scale_fill_manual(values = hmm_par$cycle.states.colors) +
+  xlab("Cycleday from estimated ovulation")+
+  ylab("Probabilities * Nb of cycles")
+
+g = g + theme_hc() + 
+  theme(strip.text.y = element_text(angle = 0),
+        strip.background = element_blank())
+g
+
+ggsave(filename = paste0(IO$panels,"4_states_by_cycle_length_combined.pdf"), plot = g, width = 7, height = 5)
+
+```
+
+
 # Figure S5 : comparison with previous studies
 
 

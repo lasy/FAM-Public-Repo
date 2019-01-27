@@ -1,0 +1,133 @@
+---
+title: "Estimation Quality"
+author: "Laura Symul"
+date: "1/25/2019"
+output: html_document
+---
+
+# Estimation parameters: Temperature shift, uncertainty and confidence score
+
+```{r state_by_cycle_length setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+```
+
+
+## Kindara
+
+```{r}
+source("Scripts/_setup_Kindara.R")
+```
+
+
+```{r state_by_cycle_length  kindara, eval = TRUE}
+days.folder.postHMM = paste0(IO$kindara_data_days,"05 post HMM/")
+days.file.list = paste0(days.folder.postHMM,list.files(days.folder.postHMM))
+
+breaks = c(0, seq(18,45,by = 3), Inf)
+
+registerDoParallel(par$n_cores)
+
+tic()
+state_probs = foreach(day.file = days.file.list,.combine = combine.sum.state.probs) %dopar% 
+{compute.state.probs(file = day.file, 
+                 fun = 'sum', 
+                 breaks = breaks,
+                 cycleday_lim = c(-40, 40))}
+toc()
+
+
+write.csv(state_probs, 
+          file = paste0(IO$output_csv, 'states_probabilities_by_cycle_length_kindara.csv'),
+          row.names = FALSE)
+
+
+save(state_probs, 
+          file = paste0(IO$output_Rdata, 'states_probabilities_by_cycle_length_kindara.Rdata'))
+
+```
+
+
+
+## Sympto
+
+```{r}
+source("Scripts/_setup_Sympto.R")
+```
+
+
+```{r state_by_cycle_length select cycledays from cycles with reliable ovulation, eval = FALSE}
+load(paste0(IO$sympto_data_02_standard_cycles_with_HMM_res,"cycledays.Rdata"), verbose = TRUE)
+load(paste0(IO$sympto_data_03_reliable_ovulation_estimation,"cycles.Rdata"), verbose = TRUE)
+
+m = match(cycledays$cycle_id, cycles$cycle_id)
+cycledays = cycledays[!is.na(m),]
+save(cycledays, file = paste0(IO$sympto_data_03_reliable_ovulation_estimation,"cycledays.Rdata") )
+```
+
+
+```{r state_by_cycle_length load data, eval = TRUE}
+load(paste0(IO$sympto_data_03_reliable_ovulation_estimation,"cycledays.Rdata"), verbose = TRUE)
+load(paste0(IO$sympto_data_03_reliable_ovulation_estimation,"cycles.Rdata"), verbose = TRUE)
+```
+
+
+```{r state_by_cycle_length sympto}
+
+breaks = c(11, seq(18,45,by = 3), 365)
+cycle_length_bin = cut(cycledays$cycle_length, breaks = breaks)
+cycledays$cycle_length_bin = cycle_length_bin
+rm(cycle_length_bin)
+
+j = (cycledays$cycleday_from_ovu >= -40) & (cycledays$cycleday_from_ovu <= 40)
+
+agg = aggregate( x = cycledays[j,44:52], 
+                 by =  list(cycle_length_bin = cycledays$cycle_length_bin[j], 
+                            cycleday_from_ovu = cycledays$cycleday_from_ovu[j]),FUN =  sum)
+
+agg_sum = aggregate(cycle_id ~ cycle_length_bin, cycledays[j,], function(x) length(unique(x)))
+
+
+colnames(agg)[3:11] = paste0('state.',colnames(agg)[3:11])
+agg$cycle_length_bin_num = as.numeric(agg$cycle_length_bin)
+
+
+state_probs = reshape(agg, idvar =  c("cycle_length_bin","cycle_length_bin_num","cycleday_from_ovu"),
+        times = c("hM" , "lM", "lE" , "hE", "O", "Rise" , "hP" , "Ep" , "lP"), timevar = "state",
+        varying = list(3:11), v.names = "prob", direction = "long")
+
+state_probs$state = factor(state_probs$state, levels = c("hM" , "lM", "lE" , "hE", "O", "Rise" , "hP" , "Ep" , "lP"))
+
+j = which(state_probs$cycle_length_bin_num %in% range(state_probs$cycle_length_bin_num))
+state_probs = state_probs[-j,]
+
+
+state_probs$prob_sum = state_probs$prob
+m = match(state_probs$cycle_length_bin, agg_sum$cycle_length_bin)
+state_probs$n_cycles = agg_sum$cycle_id[m]
+state_probs$prob = state_probs$prob/state_probs$n_cycles
+
+
+write.csv(state_probs, 
+          file = paste0(IO$output_csv, 'states_probabilities_by_cycle_length_sympto.csv'),
+          row.names = FALSE)
+
+save(state_probs, 
+          file = paste0(IO$output_Rdata, 'states_probabilities_by_cycle_length_sympto.Rdata'))
+
+g = ggplot(state_probs, aes(x = cycleday_from_ovu, y = prob, fill = state ))
+g = g + geom_area(position = 'identity', alpha = 0.7) + 
+  facet_grid(cycle_length_bin ~ ., scales = "free_y") +
+  scale_fill_manual(values = hmm_par$cycle.states.colors) +
+  xlab("Cycleday from estimated ovulation")+
+  ylab("Probabilities * Nb of cycles")
+
+g + theme_hc() + 
+  theme(strip.text.y = element_text(angle = 0),
+        strip.background = element_blank())
+
+
+
+
+```
+
+

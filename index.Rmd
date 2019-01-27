@@ -25,9 +25,9 @@ Coming soon
 
 # Figures, Code and Data
 
-Code and aggregated data to reproduce the figures can be found on the github repo [FAM-Public-Repo](https://github.com/lasy/FAM-Public-Repo).
+Code and aggregated data to reproduce the figures can be found and downloaded on the github repo [FAM-Public-Repo](https://github.com/lasy/FAM-Public-Repo).
 
-Specifically, click [here]() for the rendered [Rmd]() (R code) used to generate the Figures.
+Specifically, click [here](https://lasy.github.io/FAM-Public-Repo/Code/FAM_figures.html) for the rendered [Rmd](https://github.com/lasy/FAM-Public-Repo/blob/master/Code/FAM_figures.Rmd) (R code) used to generate the Figures.
 
 
 # Contact

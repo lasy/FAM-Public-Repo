@@ -596,7 +596,7 @@ compute.state.probs = function(file,
   rm(cycle_length_bin)
   
   j = (days$cycleday_from_ovu >= cycleday_lim[1]) & (days$cycleday_from_ovu <= cycleday_lim[2])
-  ci = which(colnames(days) %in% cycle.states[1:9])
+  ci = which(colnames(days) %in% hmm_par$cycle.states[1:9])
   
   agg = aggregate( x = days[j,ci], 
                    by =  list(cycle_length_bin = days$cycle_length_bin[j], 
@@ -605,7 +605,7 @@ compute.state.probs = function(file,
   
   agg_sum = aggregate(cycle_id ~ cycle_length_bin, days[j,], function(x) length(unique(x)))
   
-  ci = which(colnames(agg) %in% cycle.states[1:9])
+  ci = which(colnames(agg) %in% hmm_par$cycle.states[1:9])
   colnames(agg)[ci] = paste0('state.',colnames(agg)[3:11])
   agg$cycle_length_bin_num = as.numeric(agg$cycle_length_bin)
   
@@ -613,7 +613,7 @@ compute.state.probs = function(file,
                         times = c("hM" , "lM", "lE" , "hE", "O", "Rise" , "hP" , "Ep" , "lP"), timevar = "state",
                         varying = list(3:11), v.names = "prob", direction = "long")
   
-  state_probs$state = factor(state_probs$state, levels = cycle.states[1:9])
+  state_probs$state = factor(state_probs$state, levels = hmm_par$cycle.states[1:9])
   
   j = which(state_probs$cycle_length_bin_num %in% range(state_probs$cycle_length_bin_num))
   state_probs = state_probs[-j,]

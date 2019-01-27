@@ -102,7 +102,7 @@ cycles = cycles[which(cycles$reliable.ovu.est),]
 save(cycles, file = cycle.file)
 ```
 
-```{r cycle_phases_duration load data sympto, eval = FALSE}
+```{r cycle_phases_duration load data sympto, eval = TRUE}
 load(cycle.file, verbose = TRUE)
 ```
 

@@ -48,5 +48,12 @@ source("Scripts/functions.R")
 ```
 
 
+```{r child = '_estimation_quality.Rmd', cache=TRUE}
+```
+
+
+```{r child = '_states_by_cycle_length.Rmd', cache=TRUE}
+```
+
 
 
