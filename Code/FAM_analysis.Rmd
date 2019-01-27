@@ -44,5 +44,9 @@ source("Scripts/functions.R")
 ```
 
 
+```{r child = '_cycle_phases_duration.Rmd', cache=TRUE}
+```
+
+
 
 

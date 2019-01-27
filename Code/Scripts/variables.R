@@ -18,6 +18,7 @@ IO$sympto_data = paste0(IO$restricted_data_folder,"Sympto/")
 IO$sympto_data_01_all_cycles_cleaned_and_processed = paste0(IO$sympto_data,"02 processed/")
 IO$sympto_data_02_standard_cycles = paste0(IO$sympto_data,"03 ST validated/")
 IO$sympto_data_02_standard_cycles_with_HMM_res = paste0(IO$sympto_data,"04 HMM/")
+IO$sympto_data_03_reliable_ovulation_estimation = paste0(IO$sympto_data,"05 reliable ovulation estimation/")
 
 
 # Kindara

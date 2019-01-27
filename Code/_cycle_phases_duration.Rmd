@@ -1,0 +1,241 @@
+---
+title: "Cycle phase duration"
+author: "Laura Symul"
+date: "1/25/2019"
+output: html_document
+---
+
+# Ovulation Estimation: Distribution of cycle phase duration
+
+```{r cycle_phases_duration setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+```
+
+
+## Kindara
+
+```{r}
+source("Scripts/_setup_Kindara.R")
+```
+
+
+
+```{r cycle_phases_duration load data kindara, eval = TRUE}
+cycle.file = paste0(IO$kindara_data_cycles,"06 CYCLES with reliable ovulation estimation.Rdata") 
+```
+
+
+
+```{r cycle_phases_duration cycles with reliable estimation  kindara, eval = FALSE}
+file = paste0(IO$kindara_data_cycles,"05 standard with ovu est CYCLES.Rdata")
+load(file, verbose = TRUE)
+CYCLES_all = CYCLES
+CYCLES = CYCLES[which(CYCLES$reliable.ovu.est),]
+save(CYCLES, file = cycle.file)
+rm(CYCLES_all)
+```
+
+
+```{r cycle_phases_duration  Kindara}
+
+breaks = seq(0,63,by = 1)+0.5
+mids = breaks[2:length(breaks)]-0.5
+
+length.hist = hist.cycles.par(file = cycle.file, 
+                 attr = 'length', 
+                 breaks = breaks)
+
+n.cycles = sum(length.hist)
+length.hist.norm = length.hist/n.cycles
+
+# ovulation time
+
+ovu.hist = hist.cycles.par(file = cycle.file, 
+                 attr = 'ovu', 
+                 breaks = breaks)
+
+ovu.hist.norm = ovu.hist/n.cycles
+
+# luteal duration
+
+
+lut.hist = hist.cycles.par(file = cycle.file, 
+                 attr = 'luteal.duration', 
+                 breaks = breaks)
+
+lut.hist.norm = lut.hist/n.cycles
+
+plot(mids, length.hist.norm, type = 'l', lwd = 3, col = viz_cols$dark.red, ylim = range(length.hist.norm,ovu.hist.norm,lut.hist.norm))
+points(mids, ovu.hist.norm, type = 'l', lwd = 3, col = "black")
+points(mids, lut.hist.norm, type = 'l', lwd = 3, col = viz_cols$dark.yellow)
+abline(v = 28)
+
+####
+cycle_phases_duration_distribution_kindara = data.frame(duration = mids, 
+                                            cycle_length = length.hist.norm,
+                                            estimated_ovulation = ovu.hist.norm,
+                                            estimated_luteal_phase = lut.hist.norm)
+
+write.csv(cycle_phases_duration_distribution_kindara, 
+          file = paste0(IO$output_csv, 'cycle_phases_duration_distribution_kindara.csv'),
+          row.names = FALSE)
+
+save(cycle_phases_duration_distribution_kindara, file = paste0(IO$output_Rdata, 'cycle_phases_duration_distribution_kindara.Rdata') )
+```
+
+## Sympto
+
+```{r}
+source("Scripts/_setup_Sympto.R")
+```
+
+
+```{r cycle_phases_duration cycle.file}
+cycle.file = paste0(IO$sympto_data_03_reliable_ovulation_estimation,"cycles.Rdata")
+```
+
+
+```{r cycle_phases_duration cycles with reliable estimation sympto, eval = FALSE}
+file = paste0(IO$sympto_data_02_standard_cycles_with_HMM_res,"cycles.Rdata") 
+load(file, verbose = TRUE)
+cycles = cycles[which(cycles$reliable.ovu.est),]
+save(cycles, file = cycle.file)
+```
+
+```{r cycle_phases_duration load data sympto, eval = FALSE}
+load(cycle.file, verbose = TRUE)
+```
+
+```{r cycle_phases_duration histograms sympto}
+
+at.y = seq(0,0.22,by = 0.02)
+at.x = seq(0,65,by = 7)
+
+
+x = cycles$cycle_length
+h = plot_hist(x = x, bin.size = 1, 
+              at.x = seq(0,65,by = 7), at.y = at.y,
+              xlab = 'Cycle length',ylab = '% of cycles',
+              col = 'tomato2', border = 'tomato3', bars = FALSE)
+
+h.cycle_length = h
+
+x = cycles$ovu
+h = plot_hist(x = x, bin.size = 1, 
+              at.x = seq(0,65,by = 7), at.y = at.y,
+              xlab = 'Estimated ovulation day',ylab = '% of cycles',
+              col = 'gray30', border = 'gray25', bars = FALSE)
+
+h.ovu = h
+
+x = cycles$luteal.duration
+h = plot_hist(x = x, bin.size = 1, 
+              at.x = seq(0,65,by = 7), at.y = at.y,
+              xlab = 'Estimated luteal phase duration',ylab = '% of cycles',
+              col = viz_cols$yellow, border = viz_cols$dark.yellow, bars = FALSE)
+
+
+h.lut = h
+
+breaks = seq(0,63,by = 1)+0.5
+mids = breaks[2:length(breaks)]-0.5
+
+
+cycle_phases_duration_distribution_sympto = data.frame(duration = mids)
+m = match(cycle_phases_duration_distribution_sympto$duration, h.cycle_length$mids)
+cycle_phases_duration_distribution_sympto$cycle_length = h.cycle_length$density[m]
+m = match(cycle_phases_duration_distribution_sympto$duration, h.ovu$mids)
+cycle_phases_duration_distribution_sympto$estimated_ovulation = h.ovu$density[m]
+m = match(cycle_phases_duration_distribution_sympto$duration, h.lut$mids)
+cycle_phases_duration_distribution_sympto$estimated_luteal_phase = h.lut$density[m]
+
+# by goals
+
+contra = which((cycles$reliable.ovu.est) & (cycles$goal_txt == 'Contraception'))
+concep = which((cycles$reliable.ovu.est) & (cycles$goal_txt == 'Conception'))
+
+x = cycles$cycle_length[contra]
+h.cl.contra = plot_hist(x = x, bin.size = 1, 
+                        at.x = seq(0,65,by = 7), at.y = at.y,
+                        xlab = 'Cycle length',ylab = '% of cycles',
+                        col = viz_cols$yellow, border = viz_cols$dark.yellow)
+
+
+x = cycles$cycle_length[concep]
+h.cl.concep = plot_hist(x = x, bin.size = 1, 
+                        at.x = seq(0,65,by = 7), at.y = at.y,
+                        xlab = 'Cycle length',ylab = '% of cycles',
+                        col = viz_cols$yellow, border = viz_cols$dark.yellow)
+
+
+
+x = cycles$ovu[contra]
+h.ovu.contra = plot_hist(x = x, bin.size = 1, 
+                         at.x = seq(0,65,by = 7), at.y = at.y,
+                         xlab = 'Estimated ovulation day',ylab = '% of cycles',
+                         col = viz_cols$yellow, border = viz_cols$dark.yellow)
+
+
+x = cycles$ovu[concep]
+h.ovu.concep = plot_hist(x = x, bin.size = 1, 
+                         at.x = seq(0,65,by = 7), at.y = at.y,
+                         xlab = 'Estimated ovulation day',ylab = '% of cycles',
+                         col = viz_cols$yellow, border = viz_cols$dark.yellow)
+
+
+
+
+x = cycles$luteal.duration[contra]
+h.lut.contra = plot_hist(x = x, bin.size = 1, 
+                         at.x = seq(0,65,by = 7), at.y = at.y,
+                         xlab = 'Estimated luteal phase duration',ylab = '% of cycles',
+                         col = viz_cols$yellow, border = viz_cols$dark.yellow)
+
+
+x = cycles$luteal.duration[concep]
+h.lut.concep = plot_hist(x = x, bin.size = 1, 
+                         at.x = seq(0,65,by = 7), at.y = at.y,
+                         xlab = 'Estimated luteal phase duration',ylab = '% of cycles',
+                         col = viz_cols$yellow, border = viz_cols$dark.yellow)
+
+
+m = match(cycle_phases_duration_distribution_sympto$duration, h.cl.contra$mids)
+cycle_phases_duration_distribution_sympto$cycle_length_avoid_preg = h.cl.contra$density[m]
+m = match(cycle_phases_duration_distribution_sympto$duration, h.cl.concep$mids)
+cycle_phases_duration_distribution_sympto$cycle_length_seek_preg = h.cl.concep$density[m]
+
+m = match(cycle_phases_duration_distribution_sympto$duration, h.ovu.contra$mids)
+cycle_phases_duration_distribution_sympto$estimated_ovulation_avoid_preg = h.ovu.contra$density[m]
+m = match(cycle_phases_duration_distribution_sympto$duration, h.ovu.concep$mids)
+cycle_phases_duration_distribution_sympto$estimated_ovulation_seek_preg = h.ovu.concep$density[m]
+
+
+m = match(cycle_phases_duration_distribution_sympto$duration, h.lut.contra$mids)
+cycle_phases_duration_distribution_sympto$estimated_luteal_phase_avoid_preg = h.lut.contra$density[m]
+m = match(cycle_phases_duration_distribution_sympto$duration, h.lut.concep$mids)
+cycle_phases_duration_distribution_sympto$estimated_luteal_phase_seek_preg = h.lut.concep$density[m]
+
+
+
+test = cycle_phases_duration_distribution_sympto
+test[is.na(test)] = 0
+cycle_phases_duration_distribution_sympto = test
+
+write.csv(cycle_phases_duration_distribution_sympto, 
+          file = paste0(IO$output_csv, 'cycle_phases_duration_distribution_sympto.csv'),
+          row.names = FALSE)
+
+save(cycle_phases_duration_distribution_sympto,file = paste0(IO$output_Rdata, 'cycle_phases_duration_distribution_sympto.Rdata') )
+```
+
+
+
+
+
+
+
+
+
+
+
+

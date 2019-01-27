@@ -3,7 +3,7 @@
 most_likely_day_of_ovulation_hmm = function(cycletable = cycletable,
                                             debug = FALSE, 
                                             no.print = FALSE, 
-                                            sep = sep.hmm,
+                                            sep = hmm_par$sep.hmm,
                                             random_transition_probabilities = FALSE,
                                             noise = 0,
                                             conservative_transition_probabilities = FALSE,
@@ -25,10 +25,10 @@ most_likely_day_of_ovulation_hmm = function(cycletable = cycletable,
   
   if(debug){cat('\t temp emission prob generated\n')}
   
-  emissionProbs.all = combine_emissionProbs_matrices(states = cycle.states,
-                                                     symbols.1 = MBC.hmm.symbols,
+  emissionProbs.all = combine_emissionProbs_matrices(states = hmm_par$cycle.states,
+                                                     symbols.1 = hmm_par$MBC.hmm.symbols,
                                                      symbols.2 = temp.hmm.symbols,
-                                                     emissionProbs.1 = emissionProbs.MBC,
+                                                     emissionProbs.1 = hmm_par$emissionProbs.MBC,
                                                      emissionProbs.2 = emissionProbs.temp, sep = sep)
   
   if(debug){cat('\t all emission prob generated\n')}
@@ -40,23 +40,23 @@ most_likely_day_of_ovulation_hmm = function(cycletable = cycletable,
   # if we want to add noise on the transition probabilities
   if(random_transition_probabilities){
     
-    noise.mat = 10^(rnorm(nrow(cycle.states.transProbs) * ncol(cycle.states.transProbs),
+    noise.mat = 10^(rnorm(nrow(hmm_par$cycle.states.transProbs) * ncol(hmm_par$cycle.states.transProbs),
                       mean = 0, sd = noise))
-    noise.mat = matrix(noise.mat, ncol = ncol(cycle.states.transProbs), nrow = nrow(cycle.states.transProbs))
-    cycle.states.transProbs.n = cycle.states.transProbs * noise.mat
+    noise.mat = matrix(noise.mat, ncol = ncol(hmm_par$cycle.states.transProbs), nrow = nrow(hmm_par$cycle.states.transProbs))
+    cycle.states.transProbs.n = hmm_par$cycle.states.transProbs * noise.mat
     cycle.states.transProbs.n = cycle.states.transProbs.n/apply(cycle.states.transProbs.n,1,sum)
   }else{
-    cycle.states.transProbs.n = cycle.states.transProbs
+    cycle.states.transProbs.n = hmm_par$cycle.states.transProbs
   }
   
   
   # if we want more conservative transition probabilities
   if(conservative_transition_probabilities){
-    conservative.mat = diag(rep(C, nrow(cycle.states.transProbs)))
-    cycle.states.transProbs.n = cycle.states.transProbs + diag(cycle.states.transProbs) * conservative.mat
+    conservative.mat = diag(rep(C, nrow(hmm_par$cycle.states.transProbs)))
+    cycle.states.transProbs.n = hmm_par$cycle.states.transProbs + diag(hmm_par$cycle.states.transProbs) * conservative.mat
     cycle.states.transProbs.n = cycle.states.transProbs.n/apply(cycle.states.transProbs.n,1,sum)
   }else{
-    cycle.states.transProbs.n = cycle.states.transProbs
+    cycle.states.transProbs.n = hmm_par$cycle.states.transProbs
   }
   
   
@@ -66,7 +66,7 @@ most_likely_day_of_ovulation_hmm = function(cycletable = cycletable,
   
   # building the HMM model
   
-  hmm.model.all =  initHMM(States = cycle.states,
+  hmm.model.all =  initHMM(States = hmm_par$cycle.states,
                            Symbols = symbols.all,
                            startProbs = startProbs,
                            transProbs = cycle.states.transProbs.n,
@@ -75,9 +75,9 @@ most_likely_day_of_ovulation_hmm = function(cycletable = cycletable,
   if(debug){cat('\t hmm initiated\n')}
   
 
-  mucus.observations = mucus.dict$hmm.symbols[match(cycletable$elixir,mucus.dict$index)]
-  bleeding.observations = bleeding.dict$hmm.symbols[match(cycletable$blood,bleeding.dict$index)]
-  cervix.observations = cervix.dict$hmm.symbols[match(cycletable$feel,cervix.dict$index)]
+  mucus.observations = dict$mucus$hmm.symbols[match(cycletable$elixir,dict$mucus$index)]
+  bleeding.observations = dict$bleeding$hmm.symbols[match(cycletable$blood,dict$bleeding$index)]
+  cervix.observations = dict$cervix$hmm.symbols[match(cycletable$feel,dict$cervix$index)]
   
   obs = paste(mucus.observations, bleeding.observations, cervix.observations, temp.obs, sep = sep)
   obs = c(obs, paste0(rep('end',4),collapse = sep))
@@ -99,12 +99,12 @@ most_likely_day_of_ovulation_hmm = function(cycletable = cycletable,
   obs.forward.end = sum(obs.forward[,ncol(obs.forward)])
   prob.seq = exp(log(obs.forward.end)/(ncol(obs.forward)-1))
   
-  m.vit = match(obs.viterbi,cycle.states)
+  m.vit = match(obs.viterbi,hmm_par$cycle.states)
   m.seq = match(obs , symbols.all )
   P.vit = startProbs[m.vit[1]]*emissionProb.all[m.vit[1],m.seq[1]]
   for(p in 2:length(obs.viterbi)){
     P.vit[p] = P.vit[p-1]*
-      cycle.states.transProbs[m.vit[p-1],m.vit[p]]*
+      hmm_par$cycle.states.transProbs[m.vit[p-1],m.vit[p]]*
       emissionProb.all[m.vit[p],m.seq[p]]
   }
   P.vit = P.vit[length(P.vit)]
@@ -195,29 +195,29 @@ generate_emissionProbs_from_temp_meas = function(cycletable = cycletable, debug 
     emissionProbs.temp.end  = rep(0, nT) 
     
     emissionProbs.temp = c()
-    for(s in cycle.states){
+    for(s in hmm_par$cycle.states){
       eval(parse(text = paste0('emissionProbs.temp = c(emissionProbs.temp,emissionProbs.temp.',s,')')))
     }
     
     emissionProbs.temp = matrix(emissionProbs.temp,
-                                nrow = length(cycle.states), ncol = length(emissionProbs.temp.hM), byrow = TRUE)
+                                nrow = length(hmm_par$cycle.states), ncol = length(emissionProbs.temp.hM), byrow = TRUE)
     
     emissionProbs.temp = emissionProbs.temp/apply(emissionProbs.temp,1,sum)
     emissionProbs.temp.na  = c(5,4,2,1,1,1,2,3,4,0)/10
     emissionProbs.temp.LOW  = c(5,4,3,2,1,1,1,1,3,0)/30
     emissionProbs.temp.HIGH  = c(4,3,2,1,2,2,3,3,2,0)/30
-    emissionProbs.temp.QT  = rep(0.1, length(cycle.states))
+    emissionProbs.temp.QT  = rep(0.1, length(hmm_par$cycle.states))
     emissionProbs.temp.end = c(0,0,0,0,0,0,0,0,0,1)
     emissionProbs.temp = cbind(emissionProbs.temp.na,emissionProbs.temp.LOW,emissionProbs.temp,emissionProbs.temp.HIGH,emissionProbs.temp.QT,emissionProbs.temp.end)
     emissionProbs.temp = emissionProbs.temp/apply(emissionProbs.temp,1,sum)
     emissionProbs.temp[10,] = c(rep(0,length(temp.hmm.symbols)-1),1)
     
     colnames(emissionProbs.temp) = temp.hmm.symbols
-    rownames(emissionProbs.temp) = cycle.states
+    rownames(emissionProbs.temp) = hmm_par$cycle.states
     
   }else{
     T.low = 0;DT = 0; 
-    emissionProbs.temp = cbind(c(rep(1,length(cycle.states)-1),0),c(rep(0,length(cycle.states)-1),1))
+    emissionProbs.temp = cbind(c(rep(1,length(hmm_par$cycle.states)-1),0),c(rep(0,length(hmm_par$cycle.states)-1),1))
     Temp = rep('NA',nrow(cycletable))
     temp.hmm.symbols = c('NA','end')
   }
@@ -248,10 +248,10 @@ most_likely_day_of_ovulation = function(cycletable = cycletable, n.init.cond = 1
   ### HMM with Mucus,Bleeding and Cervix 
   if(debug){cat('start of HMM MBC\n')}
   source("HMM_menstrual_cycle.R")
-  hmm.model.MBC =  initHMM(States = cycle.states,
+  hmm.model.MBC =  initHMM(States = hmm_par$cycle.states,
                            Symbols = MBC.hmm.symbols,
                            startProbs = c(1,0,0,0,0,0,0,0,0,0),
-                           transProbs = cycle.states.transProbs,
+                           transProbs = hmm_par$cycle.states.transProbs,
                            emissionProbs = emissionProbs.MBC
   )
   hmm.results.MBC = detect_ovu_hmm(cycletable = cycletable, hmm.model = hmm.model.MBC, debug = debug)
@@ -275,7 +275,7 @@ most_likely_day_of_ovulation = function(cycletable = cycletable, n.init.cond = 1
     
     if(debug){cat('\t temp emission prob generated\n')}
     
-    emissionProbs.all = combine_emissionProbs_matrices(states = cycle.states,
+    emissionProbs.all = combine_emissionProbs_matrices(states = hmm_par$cycle.states,
                                                        symbols.1 = MBC.hmm.symbols,
                                                        symbols.2 = temp.hmm.symbols,
                                                        emissionProbs.1 = emissionProbs.MBC,
@@ -287,7 +287,7 @@ most_likely_day_of_ovulation = function(cycletable = cycletable, n.init.cond = 1
     emissionProb.all = emissionProbs.all$matrix
     startProbs = c(1,0,0,0,0,0,0,0,0,0)
     
-    hmm.model.all =  initHMM(States = cycle.states,
+    hmm.model.all =  initHMM(States = hmm_par$cycle.states,
                              Symbols = symbols.all,
                              startProbs = startProbs,
                              transProbs = cycle.states.transProbs,
@@ -314,7 +314,7 @@ most_likely_day_of_ovulation = function(cycletable = cycletable, n.init.cond = 1
     obs.forward.end = sum(obs.forward[,ncol(obs.forward)])
     prob.seq = exp(log(obs.forward.end)/(ncol(obs.forward)-1))
     
-    m.vit = match(obs.viterbi,cycle.states)
+    m.vit = match(obs.viterbi,hmm_par$cycle.states)
     m.seq = match(obs , symbols.all )
     P.vit = startProbs[m.vit[1]]*emissionProb.all[m.vit[1],m.seq[1]]
     for(p in 2:length(obs.viterbi)){
@@ -399,13 +399,13 @@ generate_emissionProbs_from_temp_optim = function(opt = opt, debug = FALSE){
   
   
   emissionProbs.temp = c()
-  for(s in cycle.states){
+  for(s in hmm_par$cycle.states){
     eval(parse(text = paste0('emissionProbs.temp = c(emissionProbs.temp,emissionProbs.temp.',s,')')))
   }
   
   emissionProbs.temp = matrix(emissionProbs.temp,
-                              nrow = length(cycle.states), ncol = length(temp.hmm.symbols)
-                              , byrow = TRUE, dimnames = list(cycle.states, temp.hmm.symbols))
+                              nrow = length(hmm_par$cycle.states), ncol = length(temp.hmm.symbols)
+                              , byrow = TRUE, dimnames = list(hmm_par$cycle.states, temp.hmm.symbols))
   
   
   emissionProbs.temp = emissionProbs.temp/apply(emissionProbs.temp,1,sum)

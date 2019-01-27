@@ -213,7 +213,7 @@ plot_fit_results_hmm = function(cycletable = cycletable, cycles = cycles, hmm.re
     ovu.viterbi = cycles$ovu.viterbi[j];
     ovu = cycles$ovu[j]; ovu.sd = cycles$ovu.sd[j]
     confidence = cycles$confidence[j]
-    i.post = match(cycle.states[1:9], colnames(this.cycle))
+    i.post = match(hmm_par$cycle.states[1:9], colnames(this.cycle))
     posterior = this.cycle[,i.post[!is.na(i.post)]]
     viterbi.seq = this.cycle$states
   
@@ -260,7 +260,7 @@ plot_fit_results_hmm = function(cycletable = cycletable, cycles = cycles, hmm.re
   ybottom = -lh; ytop = 0
   rect(xleft = all.days-0.5, xright = all.days+0.5,
        ybottom = ybottom, ytop = ytop,
-       col = cycle.states.dict$colors[match(state.seq,cycle.states.dict$states)],
+       col = hmm_par$cycle.states.dict$colors[match(state.seq, hmm_par$cycle.states.dict$states)],
        border = 'white')
   
   
@@ -280,7 +280,7 @@ plot_fit_results_hmm = function(cycletable = cycletable, cycles = cycles, hmm.re
   prob.all = posterior
 
   if(all(is.finite(range(prob.all)))){
-    matplot(all.days, prob.all*scale.hmm-scale.hmm-n.lines*lh, type = 'l', col = cycle.states.colors, lty = 1, lwd = 2, axes = FALSE, add = TRUE)
+    matplot(all.days, prob.all*scale.hmm-scale.hmm-n.lines*lh, type = 'l', col = hmm_par$cycle.states.colors, lty = 1, lwd = 2, axes = FALSE, add = TRUE)
     axis(2, at = seq(ylim[1],ylim[1]+scale.hmm,len = 5), labels = seq(0,1,len = 5),pos =  0.5)
   }
   par(mfrow = c(1,1))
@@ -537,8 +537,9 @@ hist.cycles.par = function(file,
                     attr = 'length', 
                     table.name = 'cycles',
                     breaks = 0:1, filter = TRUE){
-  load(file)
+  vn = load(file)
   cat(file, '\n')
+  eval(parse(text = paste0("cycles = ",vn)))
 
   eval(parse (text = paste0('y = ',table.name,'$',attr)))
   

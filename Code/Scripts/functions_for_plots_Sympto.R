@@ -621,7 +621,7 @@ plot_fit_results_hmm = function(cycletable = cycletable, hmm.res = hmm.res) {
   ybottom = -lh; ytop = 0
   rect(xleft = this.cycle$out_cycleday-0.5, xright = this.cycle$out_cycleday+0.5,
         ybottom = ybottom, ytop = ytop,
-        col = cycle.states.dict$colors[match(state.seq,cycle.states.dict$states)],
+        col = hmm_par$cycle.states.dict$colors[match(state.seq, hmm_par$cycle.states.dict$states)],
         border = 'white')
   
   
@@ -642,7 +642,7 @@ plot_fit_results_hmm = function(cycletable = cycletable, hmm.res = hmm.res) {
   prob.all = prob.all[-nrow(prob.all),-ncol(prob.all)]
     
   if(all(is.finite(range(prob.all)))){
-      matplot(this.cycle$out_cycleday, prob.all*scale.hmm-scale.hmm-n.lines*lh, type = 'l', col = cycle.states.colors, lty = 1, lwd = 2, axes = FALSE, add = TRUE)
+      matplot(this.cycle$out_cycleday, prob.all*scale.hmm-scale.hmm-n.lines*lh, type = 'l', col = hmm_par$cycle.states.colors, lty = 1, lwd = 2, axes = FALSE, add = TRUE)
       axis(2, at = seq(ylim[1],ylim[1]+scale.hmm,len = 5), labels = seq(0,1,len = 5),pos = min(this.cycle$out_cycleday)- 0.5)
   }
   par(mfrow = c(1,1))

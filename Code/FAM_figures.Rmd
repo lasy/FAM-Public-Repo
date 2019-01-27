@@ -906,21 +906,6 @@ source("Scripts/_setup_Kindara.R")
 load(paste0(IO$kindara_data_days,'/04 HMM/day10-11.Rdata'), verbose = TRUE)
 load(paste0(IO$kindara_data_cycles,'05 standard with ovu est CYCLES.Rdata'), verbose = TRUE)
 
-
-
-j = which((CYCLES$confidence >= 0.8) & (CYCLES$ovu.sd <= 0.5))
-
-for(i in j){
-  k = which(days$cycle_id == CYCLES$cycle_id[i])
-  cat(CYCLES$cycle_id[i],'\n')
-  plot_fit_results_hmm(cycletable = days[k,],cycles = CYCLES, hmm.res = NA)
-  readline(prompt="Press [enter] to continue")
-
-}
-
-
-
-
 cycle_ids = c('1497e11dfe844e86b2c84ec11f557af3_4',
               '201790bb7b6b42d89d05e37f656087c4_14',
               '4daf807bfb9e44fc8f75e14291a844a3_30',
@@ -933,22 +918,18 @@ cycle_ids = c('1497e11dfe844e86b2c84ec11f557af3_4',
               'd71e51e3114b4b5fb9f7124115c901dd_4',
               'e54d03622e444b3bb5c15813bb9a2bf9_20',
               'eb8ac1b2ffbd448f92f410560df616fb_3',
-              'fc38e35706474f87816d4f31c1ff78c8_29' # goal is wrong for this one
+              'fc38e35706474f87816d4f31c1ff78c8_29'
               )
-
-
-
 
 for(cycle_id in cycle_ids){
   k = which(days$cycle_id == cycle_id)
-  pdf(paste0(plot_path_fig4,'B_fit_cycle_example',cycle_id,'.pdf'), 
-      useDingbats = FALSE, width = pdf.full.width/2, height = 5)
-  plot_fit_results_hmm(cycletable = days[k,], cycles = cycles, hmm.res = NA, show_temp_time = FALSE)
+  plot_fit_results_hmm(cycletable = days[k,], cycles = CYCLES, hmm.res = NA, show_temp_time = FALSE)
+
+  pdf(paste0(IO$panels,'4_kindara_fit_cycle_example_',cycle_id,'.pdf'),
+      useDingbats = FALSE, width = viz$pdf.full.width/2, height = 5)
+  plot_fit_results_hmm(cycletable = days[k,], cycles = CYCLES, hmm.res = NA, show_temp_time = FALSE)
   dev.off()
-  
 }
-
-
 ```
 
 
@@ -956,28 +937,376 @@ for(cycle_id in cycle_ids){
 ### Sympto
 
 
+```{r}
+source("Scripts/_setup_Sympto.R")
+```
+
+```{r ovu_esti sympto examples}
+
+load(paste0(IO$sympto_data_02_standard_cycles_with_HMM_res,'cycledays.Rdata'), verbose = TRUE)
+load(paste0(IO$sympto_data_02_standard_cycles_with_HMM_res,'cycles.Rdata'), verbose = TRUE)
+
+cycle_ids = c('514_3','5017_22',"7197_3","990_17","7197_2")
+
+for(cycle_id in cycle_ids){
+  cat(cycle_id,"\n")
+  j = which(cycledays$cycle_id == cycle_id)
+  cycletable = cycledays[j, ]
+  N = nrow(cycletable)
+  cat(N,"\n")
+
+  res = most_likely_day_of_ovulation_hmm(cycletable = cycletable)
+  plot_fit_results_hmm(cycletable = cycletable, hmm.res = res)
+  
+  pdf(paste0(IO$panels,'4_sympto_fit_cycle_example_',cycle_id,'.pdf'),
+      useDingbats = FALSE, width = viz$pdf.full.width/2, height = 5)
+  plot_fit_results_hmm(cycletable = cycletable, hmm.res = res)
+  dev.off()
+}
+
+rm(cycle_id, cycle_ids, j, N, cycletable,res, cycles, cycledays)
+
+```
+
+
+## Cycle phases duration
+
+
+```{r cycle_phases_duration kindara load data}
+load(file = paste0(IO$output_Rdata, 'cycle_phases_duration_distribution_kindara.Rdata') , verbose = TRUE)
+hk = cycle_phases_duration_distribution_kindara
+```
+
+```{r cycle_phases_duration sympto load data}
+load(file = paste0(IO$output_Rdata, 'cycle_phases_duration_distribution_sympto.Rdata') , verbose = TRUE)
+hs = cycle_phases_duration_distribution_sympto
+load(paste0(IO$sympto_data_03_reliable_ovulation_estimation,"cycles.Rdata"), verbose = TRUE)
+```
+
+
+```{r cycle_phases_duration figure}
+
+pdf.height = 3
+pdf.width = 7
+
+at.y = seq(0,0.22,by = 0.02)
+at.x = seq(0,65,by = 7)
+
+# cycle length
+
+pdf(file = paste0(IO$panels, "4_cycle_length_distribution.pdf"), width = pdf.width, height = pdf.height, useDingbats = FALSE)
+par(las = 1, mar = c(3, 3, 0.25, 2.5) + 0.1, mgp = c(1.6,0.6,0), tcl = -0.4, col.axis = 'gray60', col.lab = 'gray40')
+
+h = plot_hist(x = cycles$cycle_length, bin.size = 1, 
+              at.x = seq(0,65,by = 7), at.y = at.y,
+              xlab = 'Cycle length',ylab = '% of cycles',
+              col = 'tomato2', border = 'tomato3', bars = FALSE)
+
+points(x = hk$duration, y = hk$cycle_length, col = 'tomato3', lw = 2, type = "l" )
+points(x = hk$duration, y = hk$cycle_length, col = 'tomato3', cex = 0.5, pch = 16, type = "p" )
+
+legend('topright', legend = c('Kindara','Sympto'),
+       col = "tomato3", 
+       lwd = c(2,1),lty = 1,
+       bty = 'o', bg ='white', box.col = 'lightgray' )
+
+dev.off()
+
+
+pdf(file = paste0(IO$panels, "4_estimated_ovulation_time_distribution.pdf"), width = pdf.width, height = pdf.height, useDingbats = FALSE)
+par(las = 1, mar = c(3, 3, 0.25, 2.5) + 0.1, mgp = c(1.6,0.6,0), tcl = -0.4, col.axis = 'gray60', col.lab = 'gray40')
+
+h = plot_hist(x = cycles$ovu, bin.size = 1, 
+              at.x = seq(0,65,by = 7), at.y = at.y,
+              xlab = 'Estimated ovulation',ylab = '% of cycles',
+              col = 'gray30', border = 'gray25', bars = FALSE)
+
+points(x = hk$duration, y = hk$estimated_ovulation, col = 'gray25', lw = 2, type = "l" )
+points(x = hk$duration, y = hk$estimated_ovulation, col = 'gray25', cex = 0.5, pch = 16, type = "p" )
+legend('topright', legend = c('Kindara','Sympto'),
+       col = "gray25", 
+       lwd = c(2,1),lty = 1,
+       bty = 'o', bg ='white', box.col = 'lightgray' )
+
+dev.off()
+
+pdf(file = paste0(IO$panels, "4_estimated_luteal_phase_duration_distribution.pdf"), width = pdf.width, height = pdf.height, useDingbats = FALSE)
+par(las = 1, mar = c(3, 3, 0.25, 2.5) + 0.1, mgp = c(1.6,0.6,0), tcl = -0.4, col.axis = 'gray60', col.lab = 'gray40')
+
+h = plot_hist(x = cycles$luteal.duration, bin.size = 1, 
+              at.x = seq(0,65,by = 7), at.y = at.y,
+              xlab = 'Estimated luteal phase duration',ylab = '% of cycles',
+              col = viz_cols$yellow, border = viz_cols$dark.yellow, bars = FALSE)
+
+points(x = hk$duration, y = hk$estimated_luteal_phase, col = viz_cols$dark.yellow, lw = 2, type = "l" )
+points(x = hk$duration, y = hk$estimated_luteal_phase, col = viz_cols$dark.yellow, cex = 0.5, pch = 16, type = "p" )
+legend('topright', legend = c('Kindara','Sympto'),
+       col = viz_cols$dark.yellow, 
+       lwd = c(2,1),lty = 1,
+       bty = 'o', bg ='white', box.col = 'lightgray' )
+
+dev.off()
+
+
+rm(pdf.height, pdf.width, at.y, at.x)
+```
+
+
+```{r cycle_phases_duration figure with Sympto reproductive goals}
+
+pdf.height = 3
+pdf.width = 7
+
+at.y = seq(0,0.22,by = 0.02)
+at.x = seq(0,65,by = 7)
+
+# cycle length
+
+pdf(file = paste0(IO$panels, "4_cycle_length_distribution_sympto_goals.pdf"), width = pdf.width, height = pdf.height, useDingbats = FALSE)
+par(las = 1, mar = c(3, 3, 0.25, 2.5) + 0.1, mgp = c(1.6,0.6,0), tcl = -0.4, col.axis = 'gray60', col.lab = 'gray40')
+
+h = plot_hist(x = cycles$cycle_length[cycles$goal_txt == "Conception"], bin.size = 1, 
+              at.x = seq(0,65,by = 7), at.y = at.y,
+              xlab = 'Cycle length',ylab = '% of cycles',
+              col = 'tomato2', border = 'tomato3', bars = FALSE, plot.median = FALSE)
+
+points(x = hs$duration, y = hs$cycle_length_avoid_preg, col = 'tomato3', lty = 2, type = "l" )
+points(x = hs$duration, y = hs$cycle_length_avoid_preg, col = 'tomato3', cex = 0.5, pch = 16, type = "p" )
+legend('topright', legend = c('contraception','conception'),
+       col = 'tomato3', 
+       lwd = 1,lty = c(2,1),
+       bty = 'o', bg ='white', box.col = 'lightgray' )
+dev.off()
+
+
+pdf(file = paste0(IO$panels, "4_estimated_ovulation_time_distribution_sympto_goals.pdf"), width = pdf.width, height = pdf.height, useDingbats = FALSE)
+par(las = 1, mar = c(3, 3, 0.25, 2.5) + 0.1, mgp = c(1.6,0.6,0), tcl = -0.4, col.axis = 'gray60', col.lab = 'gray40')
+
+h = plot_hist(x = cycles$ovu[cycles$goal_txt == "Conception"], bin.size = 1, 
+              at.x = seq(0,65,by = 7), at.y = at.y,
+              xlab = 'Estimated ovulation',ylab = '% of cycles',
+              col = 'gray30', border = 'gray25', bars = FALSE)
+
+points(x = hs$duration, y = hs$estimated_ovulation_avoid_preg, col = 'gray25', lty = 2, type = "l" )
+points(x = hs$duration, y = hs$estimated_ovulation_avoid_preg, col = 'gray25', cex = 0.5, pch = 16, type = "p" )
+legend('topright', legend = c('contraception','conception'),
+       col = 'gray25', 
+       lwd = 1,lty = c(2,1),
+       bty = 'o', bg ='white', box.col = 'lightgray' )
+
+dev.off()
+
+pdf(file = paste0(IO$panels, "4_estimated_luteal_phase_duration_distribution_sympto_goals.pdf"), width = pdf.width, height = pdf.height, useDingbats = FALSE)
+par(las = 1, mar = c(3, 3, 0.25, 2.5) + 0.1, mgp = c(1.6,0.6,0), tcl = -0.4, col.axis = 'gray60', col.lab = 'gray40')
+
+h = plot_hist(x = cycles$luteal.duration[cycles$goal_txt == "Conception"], bin.size = 1, 
+              at.x = seq(0,65,by = 7), at.y = at.y,
+              xlab = 'Estimated luteal phase duration',ylab = '% of cycles',
+              col = viz_cols$yellow, border = viz_cols$dark.yellow, bars = FALSE)
+
+points(x = hs$duration, y = hs$estimated_luteal_phase_avoid_preg, col = viz_cols$dark.yellow, lty = 2, type = "l" )
+points(x = hs$duration, y = hs$estimated_luteal_phase_avoid_preg, col = viz_cols$dark.yellow, cex = 0.5, pch = 16, type = "p" )
+legend('topright', legend = c('contraception','conception'),
+       col = viz_cols$dark.yellow, 
+       lwd = 1,lty = c(2,1),
+       bty = 'o', bg ='white', box.col = 'lightgray' )
+
+
+dev.off()
+
+
+rm(pdf.height, pdf.width, at.y, at.x)
+```
+
+
+# Estimation parameters: Temperature shift, uncertainty and confidence score
+
+```{r estimation_quality pdf size}
+pdf.height = 2
+pdf.width = 3.5
+```
+
+## Kindara
+
+
+```{r estimation_quality load kindara data}
+load(file = paste0(IO$output_Rdata, 'temperature_shift_distribution_kindara.Rdata'), verbose = TRUE)
+DT = temperature_shift_distribution_kindara
+load(file = paste0(IO$output_Rdata, 'uncertainties_distribution_kindara.Rdata'), verbose = TRUE)
+sd = uncertainties_distribution_kindara
+load(file = paste0(IO$output_Rdata, 'confidence_scores_distribution_kindara.Rdata'), verbose = TRUE)
+cs = confidence_scores_distribution_kindara
+```
 
 
 
+```{r estimation_quality figures kindara data DT}
+
+at.x = DT$temperature_shifts
+at.y = seq(0,1, by = 0.1)
+mids = DT$temperature_shifts
+by = mean(diff(mids))
+
+pdf(file = paste0(IO$panels, "S4_DT_distribution_all_kindara.pdf"), width = pdf.width, height = pdf.height, useDingbats = FALSE)
+par(las = 1, mar = c(3, 3, 0.25, 2.5) + 0.1, mgp = c(1.6,0.6,0), tcl = -0.4, col.axis = 'gray60', col.lab = 'gray40')
+
+f = DT$fraction_of_cycles
+N = length(f)
+plot(mids,f, type = 'n', 
+     axes = FALSE,xlim = range(mids-by/2, mids+by/2), ylim = c(0,0.6),
+     yaxs = 'i', xaxs = 'i',
+     xlab = 'Temperature shifts [F]', ylab = '% of cycles')
+axis(1, at = at.x , col = 'lightgray', col.ticks = 'lightgray', las = 1)
+axis(2, at = at.y , labels = 100*at.y, col = 'lightgray', col.ticks = 'lightgray', las = 1)
+abline(h = at.y, col = 'lightgray')
+abline(v = at.x, col = 'lightgray')
+rect(xright =mids-by/2,ybottom = rep(0,N),xleft = mids+by/2, ytop = f,col = 'gray50', border = 'gray40')
+
+f.0 = f; f.0[1] = 0
+x.cumsum = cumsum(f.0)
+med = mids[which(x.cumsum > (sum(f.0)/2))[1]]
+abline(v = med, lty = 2)
+text(x = med, y = at.y[2]/3, pos = 4, labels = round(med,digits = 2))
+
+dev.off()
+
+```
+
+```{r estimation_quality figures kindara data sd}
+mids = sd$uncertainties
+by = mean(diff(mids))
+at.x = seq(0,max(mids), by = 1)
+at.y = seq(0,1, by = 0.01)
+
+
+pdf(file = paste0(IO$panels, "S4_uncertainty_distribution_all_kindara.pdf"), width = pdf.width, height = pdf.height, useDingbats = FALSE)
+par(las = 1, mar = c(3, 3, 0.25, 2.5) + 0.1, mgp = c(1.6,0.6,0), tcl = -0.4, col.axis = 'gray60', col.lab = 'gray40')
+
+f = sd$fraction_of_cycles
+N = length(f)
+plot(mids,f, type = 'n', 
+     axes = FALSE,xlim = range(mids-by/2, mids+by/2), ylim = c(0,0.06),
+     yaxs = 'i', xaxs = 'i',
+     xlab = 'Uncertainty on ovu. estimation (in days)', ylab = '% of cycles')
+axis(1, at = at.x , col = 'lightgray', col.ticks = 'lightgray', las = 1)
+axis(2, at = at.y , labels = 100*at.y, col = 'lightgray', col.ticks = 'lightgray', las = 1)
+abline(h = at.y, col = 'lightgray')
+abline(v = at.x, col = 'lightgray')
+rect(xright =mids-by/2,ybottom = rep(0,N),xleft = mids+by/2, ytop = f,col = 'gray50', border = 'gray40')
+
+f.0 = f; f.0[1] = 0
+x.cumsum = cumsum(f.0)
+med = mids[which(x.cumsum > (sum(f.0)/2))[1]]
+abline(v = med, lty = 2)
+text(x = med, y = at.y[2]/3, pos = 4, labels = round(med,digits = 2))
+
+dev.off()
+
+```
+
+```{r estimation_quality figures kindara data cs}
+mids = cs$confidence_score
+by = mean(diff(mids))
+at.x = seq(0,max(mids), by = 0.1)
+at.y = seq(0,1, by = 0.02)
+
+
+pdf(file = paste0(IO$panels, "S4_confidence_score_distribution_all_kindara.pdf"), width = pdf.width, height = pdf.height, useDingbats = FALSE)
+par(las = 1, mar = c(3, 3, 0.25, 2.5) + 0.1, mgp = c(1.6,0.6,0), tcl = -0.4, col.axis = 'gray60', col.lab = 'gray40')
+
+f = cs$fraction_of_cycles
+N = length(f)
+plot(mids,f, type = 'n', 
+     axes = FALSE,xlim = range(mids-by/2, mids+by/2), ylim = c(0,0.16),
+     yaxs = 'i', xaxs = 'i',
+     xlab = 'Confidence score on ovu. estimates', ylab = '% of cycles')
+axis(1, at = at.x , col = 'lightgray', col.ticks = 'lightgray', las = 1)
+axis(2, at = at.y , labels = 100*at.y, col = 'lightgray', col.ticks = 'lightgray', las = 1)
+abline(h = at.y, col = 'lightgray')
+abline(v = at.x, col = 'lightgray')
+rect(xright =mids-by/2,ybottom = rep(0,N),xleft = mids+by/2, ytop = f,col = 'gray50', border = 'gray40')
+
+f.0 = f; f.0[1] = 0
+x.cumsum = cumsum(f.0)
+med = mids[which(x.cumsum > (sum(f.0)/2))[1]]
+abline(v = med, lty = 2)
+text(x = med, y = at.y[2]/3, pos = 4, labels = round(med,digits = 2))
+
+dev.off()
+
+```
+
+## Sympto
 
 
 
-# Figure S1
-
-# Figure S2
-
-
-# Figure S2
+```{r}
+source("Scripts/_setup_Sympto.R")
+```
 
 
-# Figure S3
+```{r estimation_quality pdf size sympto}
+pdf.height = 2
+pdf.width = 3.5
+```
 
-# Figure S4
 
-# Figure S5
+```{r estimation_quality load sympto data}
+file = paste0(IO$sympto_data_02_standard_cycles_with_HMM_res,"cycles.Rdata") 
+load(file, verbose = TRUE)
+```
 
 
-# Figure S6
+
+```{r estimation_quality figures sympto data}
+
+# DELTA T
+########################
+
+
+pdf(file = paste0(IO$panels, "S4_DT_distribution_all_sympto.pdf"), width = pdf.width, height = pdf.height, useDingbats = FALSE)
+par(las = 1, mar = c(3, 3, 0.25, 2.5) + 0.1, mgp = c(1.6,0.6,0), tcl = -0.4, col.axis = 'gray60', col.lab = 'gray40')
+
+x = cycles$D.T[cycles$D.T >= 0]
+h.DT = plot_hist(x = x, bin.size = 0.05, 
+          at.x = seq(0,1,by = 0.1), at.y = seq(0,0.25,by = 0.05),
+          xlab = 'Temperature shifts',ylab = '% of cycles' )
+
+dev.off()
+
+
+# SD on OVU ESTIMATION
+########################
+
+
+pdf(file = paste0(IO$panels, "S4_uncertainty_distribution_all_sympto.pdf"), width = pdf.width, height = pdf.height, useDingbats = FALSE)
+par(las = 1, mar = c(3, 3, 0.25, 2.5) + 0.1, mgp = c(1.6,0.6,0), tcl = -0.4, col.axis = 'gray60', col.lab = 'gray40')
+
+x = cycles$ovu.sd[cycles$ovu.sd >= 0]
+h.sd = plot_hist(x = x, bin.size = 0.05, 
+          at.x = seq(0,4,by = 0.5), at.y = seq(0,0.1,by = 0.02),
+          xlab = 'Uncertainty on ovu. estimates (in days)',ylab = '% of cycles' )
+
+dev.off()
+
+# CONFIDENCE
+########################
+
+pdf(file = paste0(IO$panels, "S4_confidence_score_distribution_all_sympto.pdf"), width = pdf.width, height = pdf.height, useDingbats = FALSE)
+par(las = 1, mar = c(3, 3, 0.25, 2.5) + 0.1, mgp = c(1.6,0.6,0), tcl = -0.4, col.axis = 'gray60', col.lab = 'gray40')
+
+x = cycles$confidence[cycles$confidence >= 0]
+h.c = plot_hist(x = x, bin.size = 0.05, 
+          at.x = seq(0,1,by = 0.2), at.y = seq(0,0.4,by = 0.05),
+          xlab = 'Confidence score on ovu. estimates',ylab = '% of cycles' )
+
+dev.off()
+```
+
+# Figure S5 : comparison with previous studies
+
+
+# Figure S6 : impact of noise and missing data on the estimations
 
 
 

@@ -1,0 +1,192 @@
+---
+title: "Estimation Quality"
+author: "Laura Symul"
+date: "1/25/2019"
+output: html_document
+---
+
+# Estimation parameters: Temperature shift, uncertainty and confidence score
+
+```{r estimation_quality setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+```
+
+
+## Kindara
+
+```{r}
+source("Scripts/_setup_Kindara.R")
+```
+
+
+```{r estimation_quality load data kindara, eval = TRUE}
+cycle.file = paste0(IO$kindara_data_cycles,"05 standard with ovu est CYCLES.Rdata") 
+load(cycle.file, verbose = TRUE)
+```
+
+
+
+
+
+
+
+
+
+```{r estimation_quality}
+
+# DELTA T
+########################
+
+by = 0.1
+mids = seq(0,2,by = by)
+breaks = c(mids[1]-by/2, mids + by/2)
+
+
+DT.hist = hist.cycles.par(file = cycle.file, 
+                 attr = 'D.T', 
+                 breaks = breaks,
+                 filter = FALSE)
+
+n.cycles = sum(DT.hist)
+
+DT.hist.norm = DT.hist/n.cycles
+
+temperature_shift_distribution_kindara = data.frame(temperature_shifts = mids, 
+                                                        fraction_of_cycles = DT.hist.norm)
+
+write.csv(temperature_shift_distribution_kindara, 
+          file = paste0(IO$output_csv, 'temperature_shift_distribution_kindara.csv'),
+          row.names = FALSE)
+
+
+save(temperature_shift_distribution_kindara, 
+          file = paste0(IO$output_Rdata, 'temperature_shift_distribution_kindara.Rdata'))
+
+
+# SD on OVU ESTIMATION
+########################
+
+by = 0.1
+mids = seq(0,10,by = by)
+breaks = c(mids[1]-by/2, mids + by/2)
+
+sd.hist = hist.cycles.par(file = cycle.file, 
+                 attr = 'ovu.sd', 
+                 breaks = breaks,
+                 filter = FALSE)
+
+n.cycles = sum(sd.hist)
+sd.hist.norm = sd.hist/n.cycles
+
+uncertainties_distribution_kindara = data.frame(uncertainties = mids, 
+                                                    fraction_of_cycles = sd.hist.norm)
+
+write.csv(uncertainties_distribution_kindara, 
+          file = paste0(IO$output_csv, 'uncertainties_distribution_kindara.csv'),
+          row.names = FALSE)
+
+
+save(uncertainties_distribution_kindara, 
+          file = paste0(IO$output_Rdata, 'uncertainties_distribution_kindara.Rdata'))
+
+
+# CONFIDENCE
+########################
+
+by = 0.05
+mids = seq(0,1,by = by)
+breaks = c(mids[1]-by/2, mids + by/2)
+
+confidence.hist = hist.cycles.par(file = cycle.file, 
+                 attr = 'confidence', 
+                 breaks = breaks,
+                 filter = FALSE)
+
+n.cycles = sum(sd.hist)
+confidence.hist.norm = confidence.hist/n.cycles
+
+confidence_scores_distribution_kindara = data.frame(confidence_score = mids, 
+                                                fraction_of_cycles = confidence.hist.norm)
+
+write.csv(confidence_scores_distribution_kindara, 
+          file = paste0(IO$output_csv, 'confidence_scores_distribution_kindara.csv'),
+          row.names = FALSE)
+
+save(confidence_scores_distribution_kindara, 
+          file = paste0(IO$output_Rdata, 'confidence_scores_distribution_kindara.Rdata'))
+
+
+
+rm(by, mids, breaks, n.cycles, confidence.hist, confidence.hist.norm, DT.hist, DT.hist.norm, uncertainties_distribution_kindara, confidence_scores_distribution_kindara, sd.hist, sd.hist.norm, CYCLES, cycle.file)
+
+
+```
+
+## Sympto
+
+```{r}
+source("Scripts/_setup_Sympto.R")
+```
+
+
+```{r estimation_quality load data sympto, eval = TRUE}
+file = paste0(IO$sympto_data_02_standard_cycles_with_HMM_res,"cycles.Rdata") 
+load(file, verbose = TRUE)
+```
+
+
+```{r estimation_quality histograms sympto}
+
+# DELTA T
+########################
+
+x = cycles$D.T[cycles$D.T >= 0]
+h.DT = plot_hist(x = x, bin.size = 0.05, 
+          at.x = seq(0,1,by = 0.1), at.y = seq(0,0.25,by = 0.05),
+          xlab = 'Temperature shifts',ylab = '% of cycles' )
+
+
+temperature_shift_distribution_sympto = data.frame(temperature_shifts = h.DT$mids, 
+                                                        fraction_of_cycles = h.DT$density)
+
+write.csv(temperature_shift_distribution_sympto, 
+          file = paste0(IO$output_csv, 'temperature_shift_distribution_sympto.csv'),
+          row.names = FALSE)
+
+
+# SD on OVU ESTIMATION
+########################
+
+x = cycles$ovu.sd[cycles$ovu.sd >= 0]
+h.sd = plot_hist(x = x, bin.size = 0.05, 
+          at.x = seq(0,4,by = 0.5), at.y = seq(0,0.1,by = 0.02),
+          xlab = 'Uncertainty on ovu. estimates (in days)',ylab = '% of cycles' )
+
+uncertainties_distribution_sympto = data.frame(uncertainties = h.sd$mids, 
+                                                    fraction_of_cycles = h.sd$density)
+
+write.csv(uncertainties_distribution_sympto, 
+          file = paste0(IO$output_csv, 'uncertainties_distribution_sympto.csv'),
+          row.names = FALSE)
+
+
+# CONFIDENCE
+########################
+
+x = cycles$confidence[cycles$confidence >= 0]
+h.c = plot_hist(x = x, bin.size = 0.05, 
+          at.x = seq(0,1,by = 0.2), at.y = seq(0,0.4,by = 0.05),
+          xlab = 'Confidence score on ovu. estimates',ylab = '% of cycles' )
+
+confidence_scores_distribution_sympto = data.frame(confidence_score = h.c$mids, 
+                                                fraction_of_cycles = h.c$density)
+
+write.csv(confidence_scores_distribution_sympto, 
+          file = paste0(IO$output_csv, 'confidence_scores_distribution_sympto.csv'),
+          row.names = FALSE)
+
+
+
+```
+
+
