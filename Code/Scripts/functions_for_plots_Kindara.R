@@ -25,7 +25,7 @@ plot_cycle = function(subtable = subtable,
   cycle_id = unique(subtable$cycle_id)[1]
   
   goal = unique(this.cycle$goal)
-  cat(goal,'\n')
+  #cat(goal,'\n')
   #mode = unique(this.cycle$method)
   #cat(mode,'\n')
 

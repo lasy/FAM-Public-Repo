@@ -12,22 +12,520 @@ knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
 ```
 
 
-```{r overall_profiles load libraries functions etc, results = FALSE, eval = TRUE}
-rm(list=ls())
-source("Scripts/libraries.R")
-source("Scripts/variables.R")
-source("Scripts/functions.R")
-```
 
 
 ## Kindara
 
-```{r overall_profiles load Kindara data}
-# TO DO
+```{r}
+source("Scripts/_setup_Kindara.R")
+```
+
+
+```{r overall_profiles file list kindara}
+folder = paste0(IO$kindara_data_days,"03 selected/")
+days.file.list = list.files(folder)
+days.file.list = paste0(folder,days.file.list )
+
+rm(folder)
+```
+
+
+### Temperature
+
+```{r overall_profiles temperature Kindara}
+
+cycleday_from_end = -28:-1
+
+breaks = seq(-0.6,2,by = 0.1)-0.05
+mids = breaks[2:length(breaks)]-0.05
+
+registerDoParallel(par$n_cores)
+
+tic()
+temp.hist = foreach(days.file = days.file.list,.combine = combine.sum) %dopar% 
+{hist.by.cycleday(file = days.file, 
+                  attr = 'temp_diff_from_p25', 
+                  breaks = breaks, 
+                  from_start = FALSE,
+                  cycleday_v = cycleday_from_end)}
+toc()
+
+colnames(temp.hist) = cycleday_from_end
+
+n.tot = colSums(temp.hist)
+temp.hist.norm = t(t(temp.hist)/ n.tot )
+
+
+delta_BBT_distribution_kindara = data.frame(cycleday = cycleday_from_end, 
+                                            d = t(temp.hist.norm))
+colnames(delta_BBT_distribution_kindara) = c('cycleday',round(mids, digits = 2))
+  
+write.csv(delta_BBT_distribution_kindara, 
+          file = paste0(IO$output_csv, 'delta_BBT_distribution_kindara.csv'),
+          row.names = FALSE)
+
+save(delta_BBT_distribution_kindara, file = paste0(IO$output_Rdata, "delta_BBT_distribution_kindara.Rdata"))
+
+
+n.cum = apply(temp.hist, 2, cumsum)
+
+n.med = sapply(X = 1:length(cycleday_from_end),which.quant, pc = 0.5, n.cum = n.cum, n.tot = n.tot)
+med = mids[n.med]
+
+n.10 = sapply(X = 1:length(cycleday_from_end),which.quant, pc = 0.1, n.cum = n.cum, n.tot = n.tot)
+n.25 = sapply(X = 1:length(cycleday_from_end),which.quant, pc = 0.25, n.cum = n.cum, n.tot = n.tot)
+n.75 = sapply(X = 1:length(cycleday_from_end),which.quant, pc = 0.75, n.cum = n.cum, n.tot = n.tot)
+n.90 = sapply(X = 1:length(cycleday_from_end),which.quant, pc = 0.9, n.cum = n.cum, n.tot = n.tot)
+
+t.10 = mids[n.10]
+t.25 = mids[n.25]
+t.75 = mids[n.75]
+t.90 = mids[n.90]
+
+delta_BBT_summary_kindara = data.frame(cycleday_from_end = cycleday_from_end, 
+                                            p.10 = round(t.10, digits = 2),
+                                            p.25 = round(t.25, digits = 2),
+                                            median = round(med, digits = 2),
+                                            p.75 = round(t.75, digits = 2),
+                                            p.90 = round(t.90, digits = 2))
+write.csv(delta_BBT_summary_kindara, 
+          file = paste0(IO$output_csv, 'delta_BBT_summary_kindara.csv'),
+          row.names = FALSE)
+
+save(delta_BBT_summary_kindara, file = paste0(IO$output_Rdata, "delta_BBT_summary_kindara.Rdata"))
+
+
+
+rm(delta_BBT_summary_kindara, t.90, t.75, t.25, t.10, n.90, n.75, n.25,n.10, med, n.med,delta_BBT_distribution_kindara,temp.hist.norm, n.tot,mids, breaks, cycleday_from_end, n.cum, temp.hist)
+
+
+```
+
+### Bleeding
+
+```{r overall_profiles bleeding Kindara}
+
+
+breaks = c(-0.25,dict$bleeding$index +0.25)
+
+cycleday_from_end = -15:-1
+
+cycleday = 1:15
+
+tic()
+bleeding.hist.end = foreach(days.file = days.file.list,.combine = combine.sum) %dopar% 
+{hist.by.cycleday(file = days.file, 
+                  attr = 'bleeding', 
+                  breaks = breaks, 
+                  from_start = FALSE,
+                  cycleday_v = cycleday_from_end)}
+toc()
+
+tic()
+bleeding.hist.start = foreach(days.file = days.file.list,.combine = combine.sum) %dopar% 
+{hist.by.cycleday(file = days.file, 
+                  attr = 'bleeding', 
+                  breaks = breaks, 
+                  from_start = TRUE,
+                  cycleday_v = cycleday)}
+toc()
+
+n.cycles = max(apply(bleeding.hist.start,2,sum))
+
+bleeding.hist.start.norm = bleeding.hist.start / n.cycles
+bleeding.hist.end.norm = bleeding.hist.end / n.cycles
+
+bleeding_distribution_kindara = data.frame(
+  cycleday = c(cycleday_from_end, cycleday),
+  no_bleeding_reported = c(as.numeric(bleeding.hist.end.norm[1,]),as.numeric(bleeding.hist.start.norm[1,])),
+  spotting = c(as.numeric(bleeding.hist.end.norm[2,]),as.numeric(bleeding.hist.start.norm[2,])),
+  light_bleeding = c(as.numeric(bleeding.hist.end.norm[3,]),as.numeric(bleeding.hist.start.norm[3,])),
+  medium_bleeding = c(as.numeric(bleeding.hist.end.norm[4,]),as.numeric(bleeding.hist.start.norm[4,])),
+  heavy_bleeding = c(as.numeric(bleeding.hist.end.norm[5,]),as.numeric(bleeding.hist.start.norm[5,]))
+)
+
+
+write.csv(bleeding_distribution_kindara, 
+          file = paste0(IO$output_csv, 'bleeding_distribution_kindara.csv'),
+          row.names = FALSE)
+
+save(bleeding_distribution_kindara, file = paste0(IO$output_Rdata, "bleeding_distribution_kindara.Rdata"))
+
+rm(bleeding.hist.start.norm, bleeding.hist.end.norm, bleeding.hist.start, bleeding.hist.end, cycleday_from_end, cycleday, bleeding_distribution_kindara)
+
+```
+
+### Mucus
+
+```{r overall_profiles mucus Kindara}
+
+breaks = 0:13-0.5
+mids = breaks[2:length(breaks)]-0.5
+cycleday_from_end = -28:-1
+
+tic()
+mucus.hist = foreach(days.file = days.file.list,.combine = combine.sum) %dopar% 
+{hist.by.cycleday(file = days.file, 
+                  attr = 'mucus', 
+                  breaks = breaks, 
+                  from_start = FALSE,
+                  cycleday_v = cycleday_from_end)}
+toc()
+
+mucus.hist.norm = mucus.hist/n.cycles
+
+cervical_mucus_distribution_kindara = data.frame(cycleday = cycleday_from_end, 
+                                            m = t(mucus.hist.norm))
+colnames(cervical_mucus_distribution_kindara) = c('cycleday',dict$mucus$names[2:14])
+
+
+write.csv(cervical_mucus_distribution_kindara, 
+          file = paste0(IO$output_csv, 'cervical_mucus_distribution_kindara.csv'),
+          row.names = FALSE)
+
+save(cervical_mucus_distribution_kindara, file = paste0(IO$output_Rdata, "cervical_mucus_distribution_kindara.Rdata"))
+
+
+rm(mucus.hist, mucus.hist.norm, breaks, mids, cycleday_from_end, cervical_mucus_distribution_kindara)
+
+```
+
+### Cervix
+```{r overall_profiles cervix Kindara}
+
+breaks = 1:4-0.5
+cycleday_from_end = -28:-1
+
+tic()
+cervix.openness.hist = foreach(days.file = days.file.list,.combine = combine.sum) %dopar% 
+{hist.by.cycleday(file = days.file, 
+                  attr = 'cervix_openness', 
+                  breaks = breaks, 
+                  from_start = FALSE,
+                  cycleday_v = cycleday_from_end)}
+toc()
+cervix.openness.hist.norm = cervix.openness.hist/n.cycles
+
+
+tic()
+cervix.height.hist = foreach(days.file = days.file.list,.combine = combine.sum) %dopar% 
+{hist.by.cycleday(file = days.file, 
+                  attr = 'cervix_height', 
+                  breaks = breaks, 
+                  from_start = FALSE,
+                  cycleday_v = cycleday_from_end)}
+toc()
+cervix.height.hist.norm = cervix.height.hist/n.cycles
+
+
+tic()
+cervix.firmness.hist = foreach(days.file = days.file.list,.combine = combine.sum) %dopar% 
+{hist.by.cycleday(file = days.file, 
+                  attr = 'cervix_firmness', 
+                  breaks = breaks, 
+                  from_start = FALSE,
+                  cycleday_v = cycleday_from_end)}
+toc()
+cervix.firmness.hist.norm = cervix.firmness.hist/n.cycles
+
+
+cervix_distribution_kindara = data.frame(cycleday = cycleday_from_end,
+                                         o = t(cervix.openness.hist.norm),
+                                         f = t(cervix.firmness.hist.norm),
+                                         h = t(cervix.height.hist.norm)
+                                         )
+colnames(cervix_distribution_kindara) = c('cycleday','o_closed','o_medium','o_open',
+                                          'f_firm','f_medium','f_soft',
+                                          'h_low','h_medium','h_high')
+
+
+write.csv(cervix_distribution_kindara, 
+          file = paste0(IO$output_csv, 'cervix_distribution_kindara.csv'),
+          row.names = FALSE)
+
+save(cervix_distribution_kindara, file = paste0(IO$output_Rdata, "cervix_distribution_kindara.Rdata"))
+
+
+rm(cervix_distribution_kindara, cervix.firmness.hist.norm, cervix.firmness.hist, cervix.height.hist.norm, cervix.height.hist, cervix.openness.hist.norm, cervix.openness.hist, breaks, cycleday_from_end )
+
+```
+
+
+### Vaginal Sensation
+
+```{r overall_profiles feel Kindara}
+
+breaks = 1:5-0.5
+cycleday_from_end = -28:-1
+
+tic()
+vaginal_sensation.hist = foreach(days.file = days.file.list,.combine = combine.sum) %dopar% 
+{hist.by.cycleday(file = days.file, 
+                  attr = 'vaginal_sensation', 
+                  breaks = breaks, 
+                  from_start = FALSE,
+                  cycleday_v = cycleday_from_end)}
+toc()
+vaginal_sensation.hist.norm = vaginal_sensation.hist/n.cycles
+
+
+vaginal_sensation_distribution_kindara = data.frame(cycleday = cycleday_from_end,
+                                         s = t(vaginal_sensation.hist.norm))
+
+colnames(vaginal_sensation_distribution_kindara) = c('cycleday',dict$feel$names[3:6])
+
+
+write.csv(vaginal_sensation_distribution_kindara, 
+          file = paste0(IO$output_csv, 'vaginal_sensation_distribution_kindara.csv'),
+          row.names = FALSE)
+
+save(vaginal_sensation_distribution_kindara, file = paste0(IO$output_Rdata, "vaginal_sensation_distribution_kindara.Rdata"))
+
+
+rm(vaginal_sensation_distribution_kindara, vaginal_sensation.hist, vaginal_sensation.hist.norm, breaks, cycleday_from_end)
+
+```
+
+```{r overall_profiles clear workspace after kindara}
+rm(days.file.list, n.cycles)
+```
+
+
+## Sympto
+
+```{r}
+source("Scripts/_setup_Sympto.R")
+```
+
+
+```{r overall_profiles load Sympto data}
+load(paste0(IO$sympto_data_02_standard_cycles_with_HMM_res,"cycledays.Rdata"), verbose = TRUE)
+```
+
+
+### Temperature
+
+```{r overall_profiles temperature Sympto}
+
+CC = cycledays
+
+n.days.in.cycle = 28
+i.end = which(CC$cycleday_from_end >= -n.days.in.cycle)
+i.start = which(CC$out_cycleday <= n.days.in.cycle)
+
+cc = CC[i.end,]
+
+uu = unique(cbind(cc$cycleday_from_end, cc$low_norm_temp), by = c('cycleday_from_end','low_norm_temp'))
+uuu = aggregate(cc[,c('cycleday_from_end','low_norm_temp')], by = list(cc$cycleday_from_end,cc$low_norm_temp), length)
+uuu = uuu[,1:3]
+colnames(uuu) = c('cycleday_from_end','low_norm_temp','n')
+
+uuu$density = uuu$n/max(uuu$n)
+
+delta_BBT_distribution_sympto = uuu[order(uuu$cycleday_from_end,uuu$low_norm_temp),-3]
+
+write.csv(delta_BBT_distribution_sympto, 
+          file = paste0(IO$output_csv, 'delta_BBT_distribution_sympto.csv'),
+          row.names = FALSE)
+
+save(delta_BBT_distribution_sympto, file = paste0(IO$output_Rdata,"delta_BBT_distribution_sympto.Rdata") )
+
+quant = aggregate(low_norm_temp ~ cycleday_from_end, cc, quantile, seq(0,1,by=0.05))
+
+delta_BBT_summary_sympto = data.frame(cycleday =  quant$cycleday_from_end,
+                                      p.10 = round(quant$low_norm_temp[,3], digits = 3),
+                                      p.25 = round(quant$low_norm_temp[,6], digits = 3),
+                                      median = round(quant$low_norm_temp[,11], digits = 3),
+                                      p.75 = round(quant$low_norm_temp[,16], digits = 3),
+                                      p.90 = round(quant$low_norm_temp[,19], digits = 3)
+                                      )
+
+write.csv(delta_BBT_summary_sympto, 
+          file = paste0(IO$output_csv, 'delta_BBT_summary_sympto.csv'),
+          row.names = FALSE)
+
+save(delta_BBT_summary_sympto, file = paste0(IO$output_Rdata,"delta_BBT_summary_sympto.Rdata") )
+
+rm(delta_BBT_distribution_sympto, delta_BBT_summary_sympto, quant, uu, uuu, cc, i.end, i.start, n.days.in.cycle)
+
+```
+
+
+### Bleeding
+
+```{r overall_profiles bleeding Sympto}
+
+obs = 'b'
+n.days.in.cycle = 15
+i.end = which(CC$cycleday_from_end >= -n.days.in.cycle)
+i.start = which(CC$out_cycleday <= n.days.in.cycle)
+
+#bleeding from start
+
+cc = CC[i.start,]
+N = length(unique(cc$cycle_id))
+breaks = seq(0.5, n.days.in.cycle+0.5, by = 1)
+for(b in c(1,2,3)){
+  h = hist(cc$out_cycleday[cc$blood == b], breaks = breaks, plot = FALSE)
+  res = data.frame(out_cycleday = h$mids, blood = paste0(obs,'.',b),freq = h$counts/N )
+  if(b == 1){resB = res}else{resB = rbind(resB, res)}
+}
+
+resB$blood = factor(resB$blood)
+resB = cast(resB, out_cycleday ~ blood )
+
+colnames(resB) = c('cycleday','light_bleeding','medium_bleeding','high_bleeding')
+
+resB.start = resB
+
+#bleeding from end
+cc = CC[i.end,]
+N = length(unique(cc$cycle_id))
+breaks = seq(-n.days.in.cycle-0.5, -0.5, by = 1)
+for(b in c(1,2,3)){
+  h = hist(cc$cycleday_from_end[cc$blood == b], breaks = breaks, plot = FALSE)
+  res = data.frame(out_cycleday = h$mids, blood = paste0(obs,'.',b),freq = h$counts/N)
+  if(b == 1){resB = res}else{resB = rbind(resB, res)}
+}
+
+resB$blood = factor(resB$blood)
+resB = cast(resB, out_cycleday ~ blood )
+colnames(resB) = c('cycleday','light_bleeding','medium_bleeding','high_bleeding')
+
+resB.end = resB
+
+resB = rbind(resB.end, resB.start)
+
+bleeding_distribution_sympto = resB
+
+write.csv(bleeding_distribution_sympto, 
+          file = paste0(IO$output_csv, 'bleeding_distribution_sympto.csv'),
+          row.names = FALSE)
+save(bleeding_distribution_sympto, file = paste0(IO$output_Rdata, 'bleeding_distribution_sympto.Rdata'))
+
+rm(res, resB, resB.end, resB.start, bleeding_distribution_sympto, N, b, n.days.in.cycle, i.start, i.end, h, cc, obs, breaks)
+
 ```
 
 
 
-## Sympto
+### Mucus
+
+
+```{r overall_profiles mucus Sympto}
+
+n.days.in.cycle = 28
+i.end = which(CC$cycleday_from_end >= -n.days.in.cycle)
+i.start = which(CC$out_cycleday <= n.days.in.cycle)
+
+obs = 'm'
+
+#mucus from end
+cc = CC[i.end,]
+N = length(unique(cc$cycle_id))
+breaks = seq(-n.days.in.cycle-0.5, -0.5, by = 1)
+for(m in c(1,2,3,4)){
+  h = hist(cc$cycleday_from_end[cc$elixir == m], breaks = breaks, plot = FALSE)
+  res = data.frame(out_cycleday = h$mids, mucus = paste0(obs,'.',m),freq = h$counts/N )
+  if(m == 1){resM = res}else{resM = rbind(resM, res)}
+}
+
+resM$mucus = factor(resM$mucus )
+resM = cast(resM, out_cycleday ~ mucus )
+
+colnames(resM) = c('cycleday',dict$mucus$hmm.symbols[2:5])
+
+
+cervical_mucus_distribution_sympto = resM
+
+
+write.csv(cervical_mucus_distribution_sympto, 
+          file = paste0(IO$output_csv, 'cervical_mucus_distribution_sympto.csv'),
+          row.names = FALSE)
+
+
+save(cervical_mucus_distribution_sympto, file = paste0(IO$output_Rdata, 'cervical_mucus_distribution_sympto.Rdata'))
+
+rm(res, resM, cervical_mucus_distribution_sympto, N, m, n.days.in.cycle, i.start, i.end, h, cc, obs, breaks)
+
+```
+
+
+
+
+### Cervix
+
+
+```{r overall_profiles cervix Sympto}
+
+obs = 'c'
+n.days.in.cycle = 28
+i.end = which(CC$cycleday_from_end >= -n.days.in.cycle)
+i.start = which(CC$out_cycleday <= n.days.in.cycle)
+
+
+cc = CC[i.end,]
+N = length(unique(cc$cycle_id))
+breaks = seq(-n.days.in.cycle-0.5, -0.5, by = 1)
+for(c in c(11,12,13)){
+  h = hist(cc$cycleday_from_end[cc$feel == c], breaks = breaks, plot = FALSE)
+  res = data.frame(out_cycleday = h$mids, cervix = paste0(obs,'.',c),freq = h$counts/N )
+  if(c == 11){resC = res}else{resC = rbind(resC, res)}
+}
+
+resC$cervix = factor(resC$cervix )
+resC = cast(resC, out_cycleday ~ cervix )
+
+colnames(resC) = c('cycleday',dict$cervix$names[5:7])
+
+cervix_distribution_sympto = resC
+
+write.csv(cervix_distribution_sympto, 
+          file = paste0(IO$output_csv, 'cervix_distribution_sympto.csv'),
+          row.names = FALSE)
+
+save(cervix_distribution_sympto, file = paste0(IO$output_Rdata, 'cervix_distribution_sympto.Rdata'))
+
+rm(res, resC, cervix_distribution_sympto, N, c, n.days.in.cycle, i.start, i.end, h, cc, obs, breaks)
+
+```
+
+
+### Vaginal Feel
+
+
+```{r overall_profiles feel Sympto}
+
+obs = "c"
+n.days.in.cycle = 28
+i.end = which(CC$cycleday_from_end >= -n.days.in.cycle)
+i.start = which(CC$out_cycleday <= n.days.in.cycle)
+
+cc = CC[i.end,]
+N = length(unique(cc$cycle_id))
+breaks = seq(-n.days.in.cycle-0.5, -0.5, by = 1)
+for(c in c(1,2,3)){
+  h = hist(cc$cycleday_from_end[cc$feel == c], breaks = breaks, plot = FALSE)
+  res = data.frame(out_cycleday = h$mids, cervix = paste0(obs,'.',c),freq = h$counts/N )
+  if(c == 1){resC = res}else{resC = rbind(resC, res)}
+}
+
+resC$cervix = factor(resC$cervix )
+resC = cast(resC, out_cycleday ~ cervix )
+
+colnames(resC) = c('cycleday',dict$cervix$names[2:4])
+
+vaginal_sensation_distribution_sympto = resC 
+
+write.csv(vaginal_sensation_distribution_sympto, 
+          file = paste0(IO$output_csv, 'vaginal_sensation_distribution_sympto.csv'),
+          row.names = FALSE)
+
+save(vaginal_sensation_distribution_sympto, file = paste0(IO$output_Rdata, 'vaginal_sensation_distribution_sympto.Rdata'))
+
+rm(res, resC, vaginal_sensation_distribution_sympto, N, c, n.days.in.cycle, i.start, i.end, h, cc, obs, breaks)
+
+```
+
 
 

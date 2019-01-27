@@ -337,9 +337,9 @@ plot_cycle = function(subtable = subtable,
     #stars
     if(show_stars){
     points(tct$out_cycleday,  tct$adj.temp, type = 'p',
-           pch = stars.dict$symbols[match(tct$out_star,stars.dict$index)], cex = 1.7, 
-           col = stars.dict$colors[match(tct$out_star,stars.dict$index)], 
-           bg = stars.dict$bg[match(tct$out_star,stars.dict$index)])
+           pch = dict$stars$symbols[match(tct$out_star,dict$stars$index)], cex = 1.7, 
+           col = dict$stars$colors[match(tct$out_star,dict$stars$index)], 
+           bg = dict$stars$bg[match(tct$out_star,dict$stars$index)])
     }
     
   }else{adj.grid.value = c(0.5); grid.value = c(NA); rt = c(0,0)}

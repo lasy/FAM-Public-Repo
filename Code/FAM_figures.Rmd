@@ -42,6 +42,9 @@ source("Scripts/functions.R")
 
 ## History Sympto user
 
+```{r}
+source("Scripts/_setup_Sympto.R")
+```
 
 ```{r 1B load data}
 load(file = paste0(IO$restricted_figure_data,"history_sympto.Rdata"), verbose = TRUE)
@@ -246,6 +249,10 @@ rm(g, sex_activity, h_values, a, CYCLES)
 ## Sympto
 
 
+```{r}
+source("Scripts/_setup_Sympto.R")
+```
+
 ```{r tracking_frequency load sympto data}
 load(paste0(IO$sympto_data_02_standard_cycles,'cycles.Rdata'), verbose = TRUE)
 ```
@@ -277,11 +284,15 @@ for(goal in 1:4){
 
 ## Examples
 
-```{r observation profiles examples kindara}
+### Kindara
 
+```{r}
 source("Scripts/_setup_Kindara.R")
+```
 
-load('../../../../Apps/Kindara/Analysis/Rdata/Days/03 selected/day10-11.Rdata')
+
+```{r observation profiles examples kindara}
+load(paste0(IO$kindara_data_days,"03 selected/day10-11.Rdata"), verbose = TRUE)
 
 cycle_ids = c('c3eeacfe8faf436db8bbc5972c25d208_18','c3eeacfe8faf436db8bbc5972c25d208_19','b4bf193f9ab94acead43a0eb1f6a0dcc_3','d71e51e3114b4b5fb9f7124115c901dd_4')
 
@@ -299,16 +310,657 @@ for(cycle_id in cycle_ids){
   plot_cycle(subtable = days[k,], show_temp_time = FALSE, show_weights = TRUE, show_goal = FALSE)
   dev.off()
 }
-
-
 rm(cycle_ids, cycle_id, k, days)
+```
 
+### Sympto
+
+
+```{r}
+source("Scripts/_setup_Sympto.R")
+```
+
+
+```{r observation profiles examples sympto load data}
+load(paste0(IO$sympto_data_02_standard_cycles,"cycledays.Rdata"), verbose = TRUE)
+```
+
+
+```{r observation profiles examples sympto}
+
+user_id_str = c("S01370x1jgg","S00278x2rao")
+cycle_nb = c(5,66)
+cycle_ids = paste0(cycledays$user_id[match( user_id_str,cycledays$user_id_str)], "_",cycle_nb)
+
+for(cycle_id in cycle_ids){
+  k = which(cycledays$cycle_id == cycle_id)
+  plot_cycle(cycledays[k,])
+  
+  pdf(paste0(IO$panels,'3_cycle_example',cycle_id,'.pdf'), 
+      useDingbats = FALSE, width = viz$pdf.full.width/1.5, height = viz$pdf.full.width/3)
+  plot_cycle(cycledays[k,])
+  dev.off()
+}
+
+rm(user_id_str,cycle_nb,cycle_ids, cycle_id, k, cycledays)
+```
+## Temperature
+
+
+### Kindara
+
+```{r}
+source("Scripts/_setup_Kindara.R")
+```
+
+```{r load data temperature kindara}
+load(file = paste0(IO$output_Rdata,"delta_BBT_distribution_kindara.Rdata"), verbose = TRUE)
+load(file = paste0(IO$output_Rdata,"delta_BBT_summary_kindara.Rdata"), verbose = TRUE)
+```
+
+
+
+```{r plot Kindara temperature profiles}
+
+mids = as.numeric(colnames(delta_BBT_distribution_kindara[-1]))
+cols = paste0('gray',as.numeric(100-round(100*as.matrix(delta_BBT_distribution_kindara[,-1])/max(delta_BBT_distribution_kindara[,-1]))))
+cycleday_from_end = delta_BBT_distribution_kindara$cycleday
+
+pdf(file = paste0(IO$panels, "3_temperature_profile_points_end_kindara.pdf"), width = 7, height = 3, useDingbats = FALSE)
+
+par(las = 1, mar = c(3, 3, 0.25, 2.5) + 0.1, mgp = c(1.8,0.6,0), tcl = -0.4)
+
+plot(rep.col(delta_BBT_distribution_kindara$cycleday, ncol(delta_BBT_distribution_kindara)-1),
+     rep.row(mids,nrow(delta_BBT_distribution_kindara)),
+     pch = 16,
+     col = cols,
+     xlab=  'Days from next cycle',
+     ylab= expression(paste(Delta,'', T,' from T-pc25 [F] ')),
+     axes = FALSE)
+
+
+axis(1, at = c(-1,seq(-7,-31,by= -7)))
+axis(2)
+axis(4, at = round(range(delta_BBT_summary_kindara$median),digits = 2))
+box()
+
+#10-90
+polygon(c(cycleday_from_end,rev(cycleday_from_end)), 
+        c(delta_BBT_summary_kindara$p.10, rev(delta_BBT_summary_kindara$p.90)),border = NA, col = rgb(0,0.5,0.8,0.25))
+#25-75
+polygon(c(cycleday_from_end,rev(cycleday_from_end)), 
+        c(delta_BBT_summary_kindara$p.25, rev(delta_BBT_summary_kindara$p.75)),border = NA, col = rgb(0,0.5,0.8,0.35))
+# median
+points(cycleday_from_end, delta_BBT_summary_kindara$median, type = 'l', lwd = 3, col = rgb(0,0.5,0.8))
+
+segments(x0 = cycleday_from_end[which.min(delta_BBT_summary_kindara$median)], 
+         y0 = min(delta_BBT_summary_kindara$median), 
+         x1 = 0, y1 =  min(delta_BBT_summary_kindara$median), col = 'gray10', lty = 2)
+
+segments(x0 = cycleday_from_end[which.max(delta_BBT_summary_kindara$median)], 
+         y0 = max(delta_BBT_summary_kindara$median), 
+         x1 = 0, y1 =  max(delta_BBT_summary_kindara$median), col = 'gray10', lty = 2)
+dev.off()
+
+
+rm(delta_BBT_distribution_kindara, delta_BBT_summary_kindara, mids, cols, cycleday_from_end)
+
+```
+
+
+![](../Figures Tables Media/Figures/panels/3_temperature_profile_points_end_kindara.pdf){width=100%}
+
+
+### Sympto
+
+
+```{r}
+source("Scripts/_setup_Sympto.R")
+```
+
+```{r load data temperature sympto}
+load(file = paste0(IO$output_Rdata,"delta_BBT_distribution_sympto.Rdata"), verbose = TRUE)
+load(file = paste0(IO$output_Rdata,"delta_BBT_summary_sympto.Rdata"), verbose = TRUE)
+```
+
+
+```{r plot Sympto temperature profiles}
+
+pdf(file = paste0(IO$panels, "3_temperature_profile_points_end_Sympto.pdf"), width = 7, height = 3, useDingbats = FALSE)
+
+par(las = 1, mar = c(3, 3, 0.25, 2.5) + 0.1, mgp = c(1.8,0.6,0), tcl = -0.4)
+
+plot(delta_BBT_distribution_sympto$cycleday_from_end, delta_BBT_distribution_sympto$low_norm_temp,
+     #xlim = c(-32,-1), 
+     ylim = c(-0.2,1),
+     xlab=  'Days from next cycle',
+     ylab= expression(paste(Delta,'', T^o,' from T - pc25 ')),
+     axes = FALSE, type = 'n')
+
+points(delta_BBT_distribution_sympto$cycleday_from_end,delta_BBT_distribution_sympto$low_norm_temp,
+       col = rgb(0,0,0,0.7/max(delta_BBT_distribution_sympto$density)*delta_BBT_distribution_sympto$density),cex = 1, pch = 16)
+
+axis(1, at = c(-1,seq(-7,-31,by= -7)))
+axis(2)
+axis(4, at = round(range(delta_BBT_summary_sympto$median),digits = 2))
+box()
+
+#10-90
+polygon(c(delta_BBT_summary_sympto$cycleday, rev(delta_BBT_summary_sympto$cycleday)), 
+        c(delta_BBT_summary_sympto$p.10, rev(delta_BBT_summary_sympto$p.90)),border = NA, col = rgb(0,0.5,0.8,0.25))
+#25-75
+polygon(c(delta_BBT_summary_sympto$cycleday,rev(delta_BBT_summary_sympto$cycleday)),
+        c(delta_BBT_summary_sympto$p.25, rev(delta_BBT_summary_sympto$p.75)),border = NA, col = rgb(0,0.5,0.8,0.35))
+# median
+points(delta_BBT_summary_sympto$cycleday, delta_BBT_summary_sympto$median, type = 'l', lwd = 3, col = rgb(0,0.5,0.8))
+
+segments(x0 = delta_BBT_summary_sympto$cycleday[which.min(delta_BBT_summary_sympto$median)], 
+         y0 = min(delta_BBT_summary_sympto$median), 
+         x1 = 0, y1 =  min(delta_BBT_summary_sympto$median), col = 'gray10', lty = 2)
+
+segments(x0 = delta_BBT_summary_sympto$cycleday[which.max(delta_BBT_summary_sympto$median)], 
+         y0 = max(delta_BBT_summary_sympto$median), 
+         x1 = 0, y1 =  max(delta_BBT_summary_sympto$median), col = 'gray10', lty = 2)
+dev.off()
+
+rm(delta_BBT_distribution_sympto, delta_BBT_summary_sympto)
+
+```
+
+![](../Figures Tables Media/Figures/panels/3_temperature_profile_points_end_Sympto.pdf){width=100%}
+
+
+
+### Temperature by orifice (Sympto only)
+
+
+```{r load Sympto cycledays and cycles data}
+load(paste0(IO$sympto_data_02_standard_cycles_with_HMM_res,"cycledays.Rdata"), verbose = TRUE)
+load(paste0(IO$sympto_data_02_standard_cycles_with_HMM_res,"cycles.Rdata"), verbose = TRUE)
+```
+
+```{r temperature by orifice}
+
+######
+# temperature distribution according to orifice
+
+m = match(cycledays$cycle_id, cycles$cycle_id)
+cycledays$orifice = cycles$temp_method_txt[m]
+orifice = factor(cycledays$orifice, unique(cycledays$orifice))
+phase = factor(cycledays$out_phase, levels = c(1,2,4,3))
+
+
+pdf(file = paste0(IO$panels, "S2_temperature_by_orifice.pdf"), width = 6, height = 3.5, useDingbats = FALSE)
+par(las = 1, mar = c(3, 3, 0.25, 2.5) + 0.1, mgp = c(1.8,0.6,0), tcl = -0.4)
+
+b = boxplot(cycledays$temp_c ~ orifice, ylim = c(35.8, 38),
+            col = viz_cols$colors_lsy[c(2,4,8,10)], pch = 16, border = viz_cols$colors_lsy_dark[c(2,4,8,10)], cex = 0.5)
+
+dev.off()
+
+pdf(file = paste0(IO$panels, "S2_temperature_by_orifice_and_phase.pdf"), width = 12, height = 3.5, useDingbats = FALSE)
+par(las = 1, mar = c(3, 3, 0.25, 2.5) + 0.1, mgp = c(1.8,0.6,0), tcl = -0.4)
+
+
+b = boxplot(cycledays$temp_c[orifice != "Undefined"] ~ phase[orifice != "Undefined"]:orifice[orifice != "Undefined"], ylim = c(35.8, 38),
+            col = dict$phases$colors[match(levels(phase),dict$phases$index) ], pch = 16, border = 'black', cex = 0.5)
+
+dev.off()
+
+rm(m, orifice, phase, cycledays, cycles)
 ```
 
 
 
 
-# Figure 4
+## Bleeding
+
+### Kindara
+
+
+```{r}
+source("Scripts/_setup_Kindara.R")
+```
+
+```{r load data bleeding kindara}
+load(file = paste0(IO$output_Rdata,"bleeding_distribution_kindara.Rdata"), verbose = TRUE)
+```
+
+
+
+```{r plot Kindara bleeding profiles}
+
+at.y = seq(0,1,by = 0.25)
+
+pdf(file = paste0(IO$panels, "3_bleeding_profile_kindara.pdf"), width = 8, height = 2, useDingbats = FALSE)
+
+par(las = 1, mar = c(3, 3, 0.25, 3) + 0.1, mgp = c(1.8,0.6,0), tcl = -0.4)
+
+b = barplot(t(as.matrix(bleeding_distribution_kindara[,-1][,c(2:5,1)])), 
+            col = dict$bleeding$colors[c(2:5,1)], border = NA, 
+            xlab = 'Days in cycle', ylab = '',
+            axes = FALSE,ylim = c(0,1),
+            names.arg = bleeding_distribution_kindara$cycleday, add = FALSE, plot = TRUE)
+axis(2, at = seq(0,1,by = 0.25), labels = seq(0,100,by = 25))
+axis(4, at = seq(0,1,by = 0.25), labels = seq(0,100,by = 25))
+dev.off()
+
+rm(bleeding_distribution_kindara, at.y, b)
+
+```
+
+
+![](../Figures Tables Media/Figures/panels/3_bleeding_profile_kindara.pdf){width=100%}
+
+
+### Sympto
+
+```{r}
+source("Scripts/_setup_Sympto.R")
+```
+
+```{r load data bleeding sympto}
+load(file = paste0(IO$output_Rdata,"bleeding_distribution_sympto.Rdata"), verbose = TRUE)
+```
+
+
+```{r plot Sympto bleeding profiles}
+
+pdf(file = paste0(IO$panels, "3_bleeding_profile_Sympto.pdf"), width = 7, height = 2, useDingbats = FALSE)
+par(las = 1, mar = c(3, 3, 0.25, 2.5) + 0.1, mgp = c(1.8,0.6,0), tcl = -0.4)
+
+
+b = barplot(t(bleeding_distribution_sympto[,-1]), 
+            col = dict$bleeding$colors[2:4], border = NA, 
+            xlab = 'Days in cycle', ylab = 'Frequency',
+            axes = FALSE,ylim = c(0,1),
+            names.arg = bleeding_distribution_sympto$cycleday, add = FALSE, plot = TRUE)
+
+axis(2, at = seq(0,1,by = 0.25))
+
+dev.off()
+
+rm(bleeding_distribution_sympto)
+
+
+```
+
+
+![](../Figures Tables Media/Figures/panels/3_bleeding_profile_Sympto.pdf){width=100%}
+
+
+
+## Mucus
+
+### Kindara
+
+
+```{r}
+source("Scripts/_setup_Kindara.R")
+```
+
+```{r load data mucus kindara}
+load(file = paste0(IO$output_Rdata,"cervical_mucus_distribution_kindara.Rdata"), verbose = TRUE)
+```
+
+
+
+```{r plot Kindara mucus profiles}
+
+at.y = seq(0,1, by = 0.025)
+
+pdf(file = paste0(IO$panels, "3_mucus_profile_end_lines_kindara.pdf"), width = 7, height = 2.5, useDingbats = FALSE)
+par(las = 1, mar = c(3, 2.5, 0.25, 2.5) + 0.1, mgp = c(1.8,0.6,0), tcl = -0.4)
+
+
+matplot(cervical_mucus_distribution_kindara[,-1], type = 'l', 
+        col = dict$mucus$colors[which(dict$mucus$index>=0)], 
+        lwd = 1.5*dict$mucus$cex[which(dict$mucus$index>=0)],
+        lty = dict$mucus$lty[which(dict$mucus$index>=0)],
+        xlab = 'Days from next cycle', ylab = '',
+        axes = FALSE,ylim = c(0,0.10))
+
+
+axis(2, at = at.y, labels = paste0(100*at.y, '%'))
+axis(4, at = at.y, labels = paste0(100*at.y, '%'))
+axis(1, at = c(seq(1,22,by = 7),28), labels = c(seq(-28,-7,by=7),1))
+
+
+dev.off()
+
+rm(cervical_mucus_distribution_kindara, at.y)
+
+```
+
+
+
+![](../Figures Tables Media/Figures/panels/3_mucus_profile_end_lines_kindara.pdf){width=100%}
+
+
+
+### Sympto
+
+```{r}
+source("Scripts/_setup_Sympto.R")
+```
+
+```{r load data mucus sympto}
+load(file = paste0(IO$output_Rdata,"cervical_mucus_distribution_sympto.Rdata"), verbose = TRUE)
+```
+
+
+
+
+
+```{r plot Sympto mucus profiles}
+pdf(file = paste0(IO$panels, "3_mucus_profile_Sympto.pdf"), width = 7, height = 2, useDingbats = FALSE)
+par(las = 1, mar = c(3, 3, 0.25, 2.5) + 0.1, mgp = c(1.8,0.6,0), tcl = -0.4)
+
+at.y = seq(0,1,by = 0.25)
+
+matplot(x = cervical_mucus_distribution_sympto$cycleday,
+        y = cervical_mucus_distribution_sympto[,-1], 
+        type = 'l', lwd = 2, lty = 1,
+        col = dict$mucus$colors[match(colnames(cervical_mucus_distribution_sympto[-1]),dict$mucus$hmm.symbols)], 
+        xlab = 'Days in cycle', ylab = '',
+        axes = FALSE,ylim = c(0,0.5))
+
+axis(2, at = at.y, labels = paste0(100*at.y, '%'))
+axis(4, at = at.y, labels = paste0(100*at.y, '%'))
+
+axis(1, at = c(seq(-28,-7,by = 7),-1))
+
+dev.off()
+
+
+rm(at.y,cervical_mucus_distribution_sympto)
+
+
+```
+
+
+![](../Figures Tables Media/Figures/panels/3_mucus_profile_Sympto.pdf){width=100%}
+
+## Cervix
+
+### Kindara
+
+
+```{r}
+source("Scripts/_setup_Kindara.R")
+```
+
+```{r load data cervix kindara}
+load(file = paste0(IO$output_Rdata,"cervix_distribution_kindara.Rdata"), verbose = TRUE)
+```
+
+
+
+```{r plot Kindara cervix profiles}
+
+at.y = seq(0,1,by = 0.005)
+
+# openness
+
+pdf(file = paste0(IO$panels, "S2_cervix_openness_profile_end_lines.pdf"), width = 7, height = 2, useDingbats = FALSE)
+par(las = 1, mar = c(3, 2.5, 0.25, 2.5) + 0.1, mgp = c(1.8,0.6,0), tcl = -0.4)
+
+matplot(cervix_distribution_kindara[,grep("o_",colnames(cervix_distribution_kindara))], type = 'l', lwd = 2, lty = 1,
+        col =  c(viz_cols$yellow, viz_cols$light.blue, viz_cols$blue),  
+        xlab = 'Days from next cycle', ylab = '',
+        axes = FALSE,ylim = c(0,0.025))
+
+axis(2, at = at.y, labels = paste0(100*at.y, '%'))
+axis(4, at = at.y, labels = paste0(100*at.y, '%'))
+axis(1, at = c(seq(1,22,by = 7),28), labels = c(seq(-28,-7,by=7),1))
+
+dev.off()
+
+
+
+# height
+
+pdf(file = paste0(IO$panels, "S2_cervix_height_profile_end_lines.pdf"), width = 7, height = 2, useDingbats = FALSE)
+par(las = 1, mar = c(3, 2.5, 0.25, 2.5) + 0.1, mgp = c(1.8,0.6,0), tcl = -0.4)
+
+matplot(cervix_distribution_kindara[,grep("h_",colnames(cervix_distribution_kindara))], type = 'l', lwd = 2, lty = 1,
+        col =  c(viz_cols$yellow, viz_cols$light.blue, viz_cols$blue),  
+        xlab = 'Days from next cycle', ylab = '',
+        axes = FALSE,ylim = c(0,0.025))
+
+axis(2, at = at.y, labels = paste0(100*at.y, '%'))
+axis(4, at = at.y, labels = paste0(100*at.y, '%'))
+axis(1, at = c(seq(1,22,by = 7),28), labels = c(seq(-28,-7,by=7),1))
+
+dev.off()
+
+
+# firmness
+
+pdf(file = paste0(IO$panels, "S2_cervix_firmness_profile_end_lines.pdf"), width = 7, height = 2, useDingbats = FALSE)
+par(las = 1, mar = c(3, 2.5, 0.25, 2.5) + 0.1, mgp = c(1.8,0.6,0), tcl = -0.4)
+
+matplot(cervix_distribution_kindara[,grep("f_",colnames(cervix_distribution_kindara))], type = 'l', lwd = 2, lty = 1,
+        col =  c(viz_cols$yellow, viz_cols$light.blue, viz_cols$blue),  
+        xlab = 'Days from next cycle', ylab = '',
+        axes = FALSE,ylim = c(0,0.025))
+
+axis(2, at = at.y, labels = paste0(100*at.y, '%'))
+axis(4, at = at.y, labels = paste0(100*at.y, '%'))
+axis(1, at = c(seq(1,22,by = 7),28), labels = c(seq(-28,-7,by=7),1))
+
+dev.off()
+
+rm(cervix_distribution_kindara, at.y)
+
+```
+
+
+![](../Figures Tables Media/Figures/panels/S2_cervix_openness_profile_end_lines.pdf){width=100%}
+![](../Figures Tables Media/Figures/panels/S2_cervix_height_profile_end_lines.pdf){width=100%}
+![](../Figures Tables Media/Figures/panels/S2_cervix_firmness_profile_end_lines.pdf){width=100%}
+
+
+
+### Sympto
+
+```{r}
+source("Scripts/_setup_Sympto.R")
+```
+
+```{r load data cervix sympto}
+load(file = paste0(IO$output_Rdata,"cervix_distribution_sympto.Rdata"), verbose = TRUE)
+```
+
+
+```{r plot Sympto cervix profiles}
+
+pdf(file = paste0(IO$panels, "S2_cervix_profile_Sympto.pdf"), width = 7, height = 2, useDingbats = FALSE)
+par(las = 1, mar = c(3, 3, 0.25, 2.5) + 0.1, mgp = c(1.8,0.6,0), tcl = -0.4)
+
+at.y = seq(0, 1, by = 0.01)
+
+matplot(x = cervix_distribution_sympto$cycleday,
+        y = cervix_distribution_sympto[,-1], 
+        type = 'l', lwd = 2, lty = 1,
+        col = dict$cervix$colors[match(colnames(cervix_distribution_sympto[-1]),dict$cervix$names)], 
+        xlab = 'Days in cycle', ylab = '',
+        axes = FALSE,ylim = c(0,0.05))
+
+axis(2, at = at.y, labels = paste0(100*at.y, '%'))
+axis(4, at = at.y, labels = paste0(100*at.y, '%'))
+axis(1, at = c(seq(-28,-7,by = 7),-1))
+
+dev.off()
+
+rm(at.y,cervix_distribution_sympto)
+
+
+```
+
+
+![](../Figures Tables Media/Figures/panels/S2_cervix_profile_Sympto.pdf){width=100%}
+
+
+
+## Vaginal sensation
+
+
+### Kindara
+
+
+```{r}
+source("Scripts/_setup_Kindara.R")
+```
+
+```{r load data feel kindara}
+load(file = paste0(IO$output_Rdata,"vaginal_sensation_distribution_kindara.Rdata"), verbose = TRUE)
+```
+
+
+
+```{r plot Kindara feel profiles}
+
+at.y = seq(0,1,by = 0.00005)
+
+pdf(file = paste0(IO$panels, "S2_vaginal_sensation_profile_end_lines_kindara.pdf"), width = 7, height = 2, useDingbats = FALSE)
+par(las = 1, mar = c(3, 3.5, 0.25, 3.5) + 0.1, mgp = c(1.8,0.6,0), tcl = -0.4)
+
+matplot(vaginal_sensation_distribution_kindara[,-1], type = 'l', lwd = 2, lty = 1,
+        col =  c(viz_cols$light.creamy,viz_cols$yellow, viz_cols$light.blue, viz_cols$blue),  
+        xlab = 'Days from next cycle', ylab = '',
+        axes = FALSE,ylim = c(0,0.0002))
+
+axis(2, at = at.y, labels = paste0(100*at.y, '%'))
+axis(4, at = at.y, labels = paste0(100*at.y, '%'))
+axis(1, at = c(seq(1,22,by = 7),28), labels = c(seq(-28,-7,by=7),1))
+
+dev.off()
+
+rm(vaginal_sensation_distribution_kindara, at.y)
+
+```
+
+
+![](../Figures Tables Media/Figures/panels/S2_vaginal_sensation_profile_end_lines_kindara.pdf){width=100%}
+
+
+
+### Sympto
+
+```{r}
+source("Scripts/_setup_Sympto.R")
+```
+
+```{r load data feel sympto}
+load(file = paste0(IO$output_Rdata,"vaginal_sensation_distribution_sympto.Rdata"), verbose = TRUE)
+```
+
+
+
+
+
+```{r plot Sympto feel profiles}
+
+pdf(file = paste0(IO$panels, "S2_vaginal_sensation_profile_Sympto.pdf"), width = 7, height = 2, useDingbats = FALSE)
+par(las = 1, mar = c(3, 3, 0.25, 2.5) + 0.1, mgp = c(1.8,0.6,0), tcl = -0.4)
+
+at.y = seq(0, 1, by = 0.05)
+
+matplot(x = vaginal_sensation_distribution_sympto$cycleday,
+        y = vaginal_sensation_distribution_sympto[,-1], 
+        type = 'l', lwd = 2, lty = 1,
+        col = dict$cervix$colors[match(colnames(vaginal_sensation_distribution_sympto[-1]),dict$cervix$names)], 
+        xlab = 'Days in cycle', ylab = '',
+        axes = FALSE,ylim = c(0,0.25))
+
+axis(2, at = at.y, labels = paste0(100*at.y, '%'))
+axis(4, at = at.y, labels = paste0(100*at.y, '%'))
+axis(1, at = c(seq(-28,-7,by = 7),-1))
+
+dev.off()
+
+rm(at.y,vaginal_sensation_distribution_sympto)
+
+```
+
+
+![](../Figures Tables Media/Figures/panels/S2_vaginal_sensation_profile_Sympto.pdf){width=100%}
+
+
+
+
+
+# Ovulation Estimation Results
+
+## Examples
+
+### Kindara
+
+```{r}
+source("Scripts/_setup_Kindara.R")
+```
+
+```{r ovu_esti kindara examples}
+
+load(paste0(IO$kindara_data_days,'/04 HMM/day10-11.Rdata'), verbose = TRUE)
+load(paste0(IO$kindara_data_cycles,'05 standard with ovu est CYCLES.Rdata'), verbose = TRUE)
+
+
+
+j = which((CYCLES$confidence >= 0.8) & (CYCLES$ovu.sd <= 0.5))
+
+for(i in j){
+  k = which(days$cycle_id == CYCLES$cycle_id[i])
+  cat(CYCLES$cycle_id[i],'\n')
+  plot_fit_results_hmm(cycletable = days[k,],cycles = CYCLES, hmm.res = NA)
+  readline(prompt="Press [enter] to continue")
+
+}
+
+
+
+
+cycle_ids = c('1497e11dfe844e86b2c84ec11f557af3_4',
+              '201790bb7b6b42d89d05e37f656087c4_14',
+              '4daf807bfb9e44fc8f75e14291a844a3_30',
+              '8067a42a1f894de7b6f04d5fab2b6cc4_9',
+              '9a0f0f797020487aa14c75b9d76e6ac1_5',
+              'a7a672481c594ed48897caa3ce9fdb46_3',
+              'a7be6f1d198d406e8542a3fa6f3e7710_7',
+              'bb42baba52d84b458520aaf634c908fa_2',
+              'd4dfe0a4ee2948c59ae19f2d0b985a0f_5',
+              'd71e51e3114b4b5fb9f7124115c901dd_4',
+              'e54d03622e444b3bb5c15813bb9a2bf9_20',
+              'eb8ac1b2ffbd448f92f410560df616fb_3',
+              'fc38e35706474f87816d4f31c1ff78c8_29' # goal is wrong for this one
+              )
+
+
+
+
+for(cycle_id in cycle_ids){
+  k = which(days$cycle_id == cycle_id)
+  pdf(paste0(plot_path_fig4,'B_fit_cycle_example',cycle_id,'.pdf'), 
+      useDingbats = FALSE, width = pdf.full.width/2, height = 5)
+  plot_fit_results_hmm(cycletable = days[k,], cycles = cycles, hmm.res = NA, show_temp_time = FALSE)
+  dev.off()
+  
+}
+
+
+```
+
+
+
+### Sympto
+
+
+
+
+
+
+
 
 # Figure S1
 

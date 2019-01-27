@@ -20,7 +20,7 @@ package_list = c('data.table',
 pckgs = installed.packages()
 
 for(package in package_list){
-  cat(package,"\n")
+  #cat(package,"\n")
   need.to.install = (!(package %in% pckgs[,1]))
   if(need.to.install){cat('installing package ',package,'\n');install.packages(package,dependencies = TRUE)}
   library(package = package, character.only = TRUE)

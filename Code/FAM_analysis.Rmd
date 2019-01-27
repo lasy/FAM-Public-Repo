@@ -36,4 +36,13 @@ source("Scripts/functions.R")
 ```
 
 
+```{r child = '_tracking_frequency.Rmd', cache=TRUE}
+```
+
+
+```{r child = '_overall_profiles.Rmd', cache=TRUE}
+```
+
+
+
 

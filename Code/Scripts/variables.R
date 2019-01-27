@@ -13,14 +13,18 @@ dict = list()
 # path to data remains protected
 source("../../FAM-Restricted-Access-Repo/Scripts/variables_IO.R")
 
+# Sympto
 IO$sympto_data = paste0(IO$restricted_data_folder,"Sympto/")
 IO$sympto_data_01_all_cycles_cleaned_and_processed = paste0(IO$sympto_data,"02 processed/")
 IO$sympto_data_02_standard_cycles = paste0(IO$sympto_data,"03 ST validated/")
+IO$sympto_data_02_standard_cycles_with_HMM_res = paste0(IO$sympto_data,"04 HMM/")
 
 
+# Kindara
 IO$kindara_data = paste0(IO$restricted_data_folder,"Kindara/")
 IO$kindara_data_accounts = paste0(IO$kindara_data,"Accounts/")
 IO$kindara_data_cycles = paste0(IO$kindara_data,"Cycles/")
+IO$kindara_data_days = paste0(IO$kindara_data, "Days/")
 
 # OUTPUTS
 IO$output_data = "../Data/"

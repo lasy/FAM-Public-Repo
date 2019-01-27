@@ -12,6 +12,14 @@ knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
 ```
 
 
+## Kindara
+
+
+```{r}
+source("Scripts/_setup_Kindara.R")
+```
+
+
 ```{r user_demographics load libraries functions etc, results = FALSE, eval = TRUE}
 rm(list=ls())
 source("Scripts/libraries.R")
@@ -19,8 +27,6 @@ source("Scripts/variables.R")
 source("Scripts/functions.R")
 ```
 
-
-## Kindara
 
 ```{r user_demographics load Kindara data}
 load(file = paste0(IO$kindara_data_accounts,'processed_cleaned_accounts_onefile.Rdata'), verbose = TRUE)
@@ -42,6 +48,10 @@ rm(accounts, users_demo_kindara)
 
 ## Sympto
 
+
+```{r}
+source("Scripts/_setup_Sympto.R")
+```
 
 ```{r user_demographics load sympto data}
 

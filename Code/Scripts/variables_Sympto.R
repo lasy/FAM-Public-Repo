@@ -79,15 +79,15 @@ viz_cols$very.light.red = hsv(viz_cols$red.hue, s = 0.5, v = 1)
 viz_cols$transparent = hsv(viz_cols$red.hue, s = 1, v = 0, alpha = 0)
 
 
-source('Scripts/HMM_menstrual_cycle.R')
+source('Scripts/HMM_menstrual_cycle_Sympto.R')
 
-bleeding.number = c(0,0.5,1:3)
-bleeding.names = c('Nothing', 'spotting','light bleeding','medium bleeding','heavy bleeding')
-bleeding.colors = c(viz_cols$transparent, viz_cols$very.light.red , viz_cols$light.red, viz_cols$medium.red, viz_cols$dark.red)
+bleeding.number = c(0:3)
+bleeding.names = c('Nothing', 'light bleeding or spotting','medium bleeding','heavy bleeding')
+bleeding.colors = c(viz_cols$transparent, viz_cols$light.red, viz_cols$medium.red, viz_cols$dark.red)
 dict$bleeding = data.frame(index = bleeding.number, 
                            names = bleeding.names, 
                            colors = bleeding.colors, 
-                           hmm.symbols = hmm_par$bleeding.hmm.symbols[c(1,NA,4,3,2)],
+                           hmm.symbols = hmm_par$bleeding.hmm.symbols[c(1,4,3,2)],
                            stringsAsFactors = FALSE)
 
 rm(bleeding.number, bleeding.names, bleeding.colors)

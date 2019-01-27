@@ -9,3 +9,10 @@ lubridate
 dplyr
 HMM
 reshape
+tictoc
+foreach
+iterators
+doParallel
+stringr
+plotrix
+chron
