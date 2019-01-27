@@ -1,0 +1,188 @@
+---
+title: "Most useful signs to detect ovulation"
+author: "Laura Symul"
+date: "Jan 2019"
+output: html_document
+---
+
+```{r most_useful_sign setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+```
+
+
+
+```{r most_useful_sign functions and libraries etc, include=FALSE}
+source("Scripts/_setup_Sympto.R")
+theme_set(theme_minimal())
+```
+
+
+
+# load data
+
+to select cycles with reliable ovulation estimation and data everyday
+
+```{r most_useful_sign load data}
+load(file = paste0(IO$sympto_data_03_reliable_ovulation_estimation,'users.Rdata'), verbose = TRUE)
+load(file = paste0(IO$sympto_data_03_reliable_ovulation_estimation,'cycles.Rdata'), verbose = TRUE)
+load(file = paste0(IO$sympto_data_03_reliable_ovulation_estimation,'cycledays.Rdata'), verbose = TRUE)
+```
+
+```{r most_useful_sign select cycles}
+j = which((cycles$confidence >= 0.9) & (cycles$ovu.sd < 0.5) & (cycles$D.T > 0.35))
+cycle_ids = cycles$cycle_id[j]
+selected_cycle_ids = sample(cycle_ids, length(cycle_ids))
+length(selected_cycle_ids)
+```
+
+# menstrual phase and ovulation estimation with the original profiles
+
+```{r most_useful_sign estimation for the original data}
+
+RES = data.frame()
+
+for(cycle_id in selected_cycle_ids){
+  j = which(cycledays$cycle_id == cycle_id)
+  res = most_likely_day_of_ovulation_hmm(cycletable = cycledays[j,], no.print = TRUE)
+  line_res = data.frame(cycle_id = cycle_id, missing_feature = "none", percent_missing = 0, ovu = res$ovu, ovu.sd = res$ovu.sd, confidence = res$confidence, T.low = res$T.low, DT = res$DT)
+  RES = rbind(RES, line_res)
+  
+  #plot_fit_results_hmm(cycletable = cycledays[j,], hmm.res = res)
+}
+
+RES.o = RES
+
+save(RES.o, file = paste0(IO$output_Rdata,"most_useful_sign_RES_1.Rdata"))
+
+```
+
+# Estimation with missing data
+
+## Missing temperature values
+
+We progressively remove temperature measurements from the original profiles until there is no more temperature measurements.
+
+```{r most_useful_sign removing temperature, warnings = FALSE}
+
+for(cycle_id in selected_cycle_ids){
+  j = which(cycledays$cycle_id == cycle_id)
+  cycletable = cycledays[j,]
+  for(p in seq(0,100, by = 20)){
+    
+    cycletable_mod = cycletable
+    i = which(!is.na( cycletable_mod$temp_c))
+    cycletable_mod$temp_c[sample(i, round(length(i)/100*p))] = NA
+    
+    res = most_likely_day_of_ovulation_hmm(cycletable = cycletable_mod, no.print = TRUE)
+    #plot_fit_results_hmm(cycletable = cycletable_mod, hmm.res = res)
+
+    line_res = data.frame(cycle_id = cycle_id, missing_feature = "temperature", percent_missing = p, ovu = res$ovu, ovu.sd = res$ovu.sd, confidence = res$confidence, T.low = res$T.low, DT = res$DT)
+    RES = rbind(RES, line_res)
+    
+  }
+}
+
+save(RES, file = paste0(IO$output_Rdata,"most_useful_sign_RES_temp.Rdata"))
+RES.temp = RES
+
+```
+
+
+```{r most_useful_sign visualizing impact of missing temperature}
+
+ggplot(RES, aes(col = percent_missing , x = ovu, y = cycle_id)) + geom_point()
+ggplot(RES, aes(col = percent_missing , x = T.low, y = cycle_id)) + geom_point()
+ggplot(RES, aes(col = percent_missing , x = DT, y = cycle_id)) + geom_point()
+
+ggplot(RES, aes(col = percent_missing , x = confidence, y = cycle_id)) + geom_point() 
+ggplot(RES, aes(col = percent_missing , x = ovu.sd, y = cycle_id)) + geom_point()
+
+
+```
+
+
+## Missing cervical mucus reports
+
+Similarly, we remove mucus reports until profiles have no mucus reports at all.
+
+```{r most_useful_sign removing mucus, warnings = FALSE}
+
+
+for(cycle_id in selected_cycle_ids){
+  j = which(cycledays$cycle_id == cycle_id)
+  cycletable = cycledays[j,]
+  for(p in seq(0,100, by = 20)){
+    
+    cycletable_mod = cycletable
+    i = which(cycletable_mod$elixir !=0)
+    cycletable_mod$elixir[sample(i, round(length(i)/100*p))] = 0
+    
+    res = most_likely_day_of_ovulation_hmm(cycletable = cycletable_mod, no.print = TRUE)
+    #plot_fit_results_hmm(cycletable = cycletable_mod, hmm.res = res)
+
+    line_res = data.frame(cycle_id = cycle_id, missing_feature = "mucus", percent_missing = p, ovu = res$ovu, ovu.sd = res$ovu.sd, confidence = res$confidence, T.low = res$T.low, DT = res$DT)
+    RES = rbind(RES, line_res)
+    
+  }
+}
+
+
+save(RES, file = paste0(IO$output_Rdata,"most_useful_sign_RES_temp_and_mucus.Rdata"))
+RES.temp_and_mucus = RES
+
+
+```
+
+
+```{r most_useful_sign visualizing impact of missing mucus}
+
+ggplot(RES, aes(col = percent_missing , x = ovu, y = cycle_id)) + geom_point() + facet_grid(. ~ missing_feature)
+ggplot(RES, aes(col = percent_missing , x = T.low, y = cycle_id)) + geom_point()+ facet_grid(. ~ missing_feature)
+ggplot(RES, aes(col = percent_missing , x = DT, y = cycle_id)) + geom_point()+ facet_grid(. ~ missing_feature)
+
+ggplot(RES, aes(col = percent_missing , x = confidence, y = cycle_id)) + geom_point() + facet_grid(. ~ missing_feature)
+ggplot(RES, aes(col = percent_missing , x = ovu.sd, y = cycle_id)) + geom_point()+ facet_grid(. ~ missing_feature)
+
+
+```
+
+We examine the changes in ovulation estimation and on the uncertainty and confidence of these estimations
+
+
+```{r most_useful_sign relative changes compared to full dataset}
+
+colnames(RES.o)[4:8] = paste0(colnames(RES.o)[4:8],"_original")
+
+RES = merge(RES, RES.o[,c(1,4:8)], all = TRUE)
+
+
+RES$ovu_diff =  RES$ovu - RES$ovu_original
+RES$ovu.sd_ratio_log2 =  log2(RES$ovu.sd / RES$ovu.sd_original)
+RES$confidence_ratio_log2 =  log2(RES$confidence / RES$confidence_original)
+
+ggplot(RES[RES$missing_feature!= "none",], aes(col = percent_missing , x = ovu_diff, y = percent_missing)) + geom_point() + facet_grid(. ~ missing_feature)
+ggplot(RES[RES$missing_feature!= "none",], aes(col = percent_missing , x = ovu.sd_ratio_log2, y = percent_missing)) + geom_point() + facet_grid(. ~ missing_feature)
+ggplot(RES[RES$missing_feature!= "none",], aes(col = percent_missing , x = confidence_ratio_log2, y = percent_missing)) + geom_point()+ facet_grid(. ~ missing_feature)
+
+RES_l = RES[RES$missing_feature!= "none",c(1,2,3,14,15,16)]
+RES_l = RES_l[(RES_l$ovu_diff >= -10)&(RES_l$confidence_ratio_log2 >= -2),] # to have resonable axes in the figure
+RES_l = reshape(RES_l,idvar = c("cycle_id","missing_feature","percent_missing"), varying = list(4:6), direction = "long")
+metrics = c("ovulation time","uncertainty on ovu. time","confidence in estimation")
+RES_l$metric = metrics[RES_l$time]
+RES_l$metric = factor(RES_l$metric, levels = metrics)
+RES_l$value = RES_l$ovu_diff
+rownames(RES_l) = 1:nrow(RES_l)
+RES_l = RES_l[,c("cycle_id","missing_feature","percent_missing","metric","value")]
+RES_l$percent_missing_f = factor(RES_l$percent_missing, levels = seq(100,0,by = -20))
+
+ggplot(RES_l, aes(col = percent_missing , x = value, y = percent_missing_f)) + geom_point(alpha = 0.5) + facet_grid(missing_feature ~ metric, scale = "free") + scale_color_gradient(low = "gray20",high = "tomato")
+
+
+save(RES_l, file = paste0(IO$output_Rdata,"most_useful_sign_RES_l.Rdata"))
+
+
+
+```
+
+
+

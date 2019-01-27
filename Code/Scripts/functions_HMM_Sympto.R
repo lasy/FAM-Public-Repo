@@ -39,6 +39,7 @@ most_likely_day_of_ovulation_hmm = function(cycletable = cycletable,
   
   # if we want to add noise on the transition probabilities
   if(random_transition_probabilities){
+    if(debug){cat('\t random_transition_probabilities\n')}
     
     noise.mat = 10^(rnorm(nrow(hmm_par$cycle.states.transProbs) * ncol(hmm_par$cycle.states.transProbs),
                       mean = 0, sd = noise))
@@ -147,6 +148,179 @@ most_likely_day_of_ovulation_hmm = function(cycletable = cycletable,
   if(debug){cat('end of most_likely_day_of_ovulation_hmm\n')}
   return(results = hmm.results.all)
 }
+
+
+
+most_likely_day_of_ovulation_hmm = function(cycletable = cycletable,
+                                            debug = FALSE, 
+                                            no.print = FALSE, 
+                                            sep = hmm_par$sep.hmm,
+                                            random_transition_probabilities = FALSE,
+                                            noise = 0,
+                                            conservative_transition_probabilities = FALSE,
+                                            C = 0,
+                                            random_emission_probabilities = FALSE){
+  
+  ### HMM with temperature measurements as emission
+  
+  if(debug){cat('start of most_likely_day_of_ovulation_hmm\n')}
+  
+  ## generating emission probabilities for temperature measurements
+  emissionProbs.temp = generate_emissionProbs_from_temp_meas(cycletable = cycletable, debug = debug)
+  temp.hmm.symbols = emissionProbs.temp$symbols
+  temp.obs = emissionProbs.temp$obs
+  T.low = emissionProbs.temp$T.low
+  DT = emissionProbs.temp$DT
+  weights = emissionProbs.temp$weights
+  
+  emissionProbs.temp = emissionProbs.temp$matrix
+  
+  if(debug){cat('\t temp emission prob generated\n')}
+  
+  emissionProbs.all = combine_emissionProbs_matrices(states = hmm_par$cycle.states,
+                                                     symbols.1 = hmm_par$MBC.hmm.symbols,
+                                                     symbols.2 = temp.hmm.symbols,
+                                                     emissionProbs.1 = hmm_par$emissionProbs.MBC,
+                                                     emissionProbs.2 = emissionProbs.temp, sep = sep)
+  
+  if(debug){cat('\t all emission prob generated\n')}
+  
+  
+  symbols.all = emissionProbs.all$symbols
+  emissionProb.all = emissionProbs.all$matrix
+  startProbs = c(1,0,0,0,0,0,0,0,0,0)
+  
+  
+  # if we want to add noise on the emission probabilities
+  if(random_emission_probabilities){
+    #cat("random_emission_probabilities\n")
+    noise.mat = 10^(rnorm(nrow(emissionProb.all) * ncol(emissionProb.all),
+                          mean = 0, sd = noise))
+    noise.mat = matrix(noise.mat, ncol = ncol(emissionProb.all), nrow = nrow(emissionProb.all))
+    emissionProb.all.n = emissionProb.all * noise.mat
+    emissionProb.all.n = emissionProb.all.n/apply(emissionProb.all.n,1,sum)
+    #print(emissionProb.all.n[1,])
+    #print(emissionProb.all.n[10,])
+    
+  }else{emissionProb.all.n = emissionProb.all}
+  
+  
+  
+  # if we want to add noise on the transition probabilities
+  if(random_transition_probabilities){
+    noise.mat = 10^(rnorm(nrow(hmm_par$cycle.states.transProbs) * ncol(hmm_par$cycle.states.transProbs),
+                          mean = 0, sd = noise))
+    noise.mat = matrix(noise.mat, ncol = ncol(hmm_par$cycle.states.transProbs), nrow = nrow(hmm_par$cycle.states.transProbs))
+    cycle.states.transProbs.n = hmm_par$cycle.states.transProbs * noise.mat
+    cycle.states.transProbs.n = cycle.states.transProbs.n/apply(cycle.states.transProbs.n,1,sum)
+    #print(cycle.states.transProbs.n[1,])
+  }
+  
+  
+  # if we want more conservative transition probabilities
+  if(conservative_transition_probabilities){
+    conservative.mat = diag(rep(C, nrow(hmm_par$cycle.states.transProbs)))
+    cycle.states.transProbs.n = hmm_par$cycle.states.transProbs + diag(hmm_par$cycle.states.transProbs) * conservative.mat
+    cycle.states.transProbs.n = cycle.states.transProbs.n/apply(cycle.states.transProbs.n,1,sum)
+  }
+  
+  if(! (random_transition_probabilities | conservative_transition_probabilities)){
+    cycle.states.transProbs.n = hmm_par$cycle.states.transProbs
+  }
+  
+  #print(cycle.states.transProbs.n[1,])
+  
+  cycle.states.transProbs.simpl = cycle.states.transProbs.n
+  cycle.states.transProbs.simpl[cycle.states.transProbs.simpl==0] = NA
+  dev.sym = sum(apply(cycle.states.transProbs.simpl,1,sd, na.rm = TRUE), na.rm = TRUE)
+  
+  diff.em = sum(abs(emissionProb.all.n - emissionProb.all))
+  
+  # building the HMM model
+  
+  hmm.model.all =  initHMM(States = hmm_par$cycle.states,
+                           Symbols = symbols.all,
+                           startProbs = startProbs,
+                           transProbs = cycle.states.transProbs.n,
+                           emissionProbs = emissionProb.all.n)
+  
+  if(debug){cat('\t hmm initiated\n')}
+  
+  
+  mucus.observations = dict$mucus$hmm.symbols[match(cycletable$elixir,dict$mucus$index)]
+  bleeding.observations = dict$bleeding$hmm.symbols[match(cycletable$blood,dict$bleeding$index)]
+  cervix.observations = dict$cervix$hmm.symbols[match(cycletable$feel,dict$cervix$index)]
+  
+  obs = paste(mucus.observations, bleeding.observations, cervix.observations, temp.obs, sep = sep)
+  obs = c(obs, paste0(rep('end',4),collapse = sep))
+  
+  if(debug){cat('\t before viterbi\n')}
+  
+  obs.viterbi = viterbi(hmm.model.all,obs)
+  if(!no.print){cat(obs.viterbi,'\n')}
+  if(length(grep('end',obs.viterbi))==0){do.temp.fit = FALSE}
+  
+  if(debug){cat('\t after viterbi\n')}
+  
+  
+  obs.posterior = posterior(hmm.model.all,obs)
+  #matplot(t(obs.posterior), type = 'l', col = cycle.states.colors, lty = 1)
+  
+  obs.logforward = forward(hmm.model.all,obs)
+  obs.forward = exp(obs.logforward)
+  obs.forward.end = sum(obs.forward[,ncol(obs.forward)])
+  prob.seq = exp(log(obs.forward.end)/(ncol(obs.forward)-1))
+  
+  m.vit = match(obs.viterbi,hmm_par$cycle.states)
+  m.seq = match(obs , symbols.all )
+  P.vit = startProbs[m.vit[1]]*emissionProb.all[m.vit[1],m.seq[1]]
+  for(p in 2:length(obs.viterbi)){
+    P.vit[p] = P.vit[p-1]*
+      cycle.states.transProbs.n[m.vit[p-1],m.vit[p]]*
+      emissionProb.all[m.vit[p],m.seq[p]]
+  }
+  P.vit = P.vit[length(P.vit)]
+  prob.seq.viterbi = exp(log(P.vit)/(length(obs.viterbi)-1))
+  
+  x = cycletable$out_cycleday
+  post.ovu = obs.posterior[5,-ncol(obs.posterior)]
+  ovu = weighted.mean(x, w = post.ovu)
+  ovu.sd = sqrt(sum(post.ovu * (x - ovu)^2))
+  
+  j = which(obs.viterbi == 'O')
+  if(length(j)>0){ovu.viterbi = cycletable$out_cycleday[j]}else{ovu.viterbi = NA}
+  
+  r.ovu = round(ovu)
+  j = (cycletable$out_cycleday >= (r.ovu - 3)) & (cycletable$out_cycleday <= (r.ovu + 3)) 
+  ww = weights; ww[is.na(ww)] = 0
+  w.weights = sum(ww[j])/sum(j)
+  w = dnorm(-3:3,0,2); w = w/sum(w)
+  w.missing.temp = as.numeric(!is.na(cycletable$temp_c[j]))*w
+  w.missing.elixir = as.numeric((cycletable$elixir[j])!= 0)*w
+  #  w.feel = as.numeric((cycletable$feel[j])!= 0)*w/2
+  #  w.blood = as.numeric((cycletable$blood[j])!= 0)*w/4
+  confidence = (w.weights + sum(w.missing.temp) + sum(w.missing.elixir))/3
+  
+  
+  hmm.results.all = list(obs.viterbi = obs.viterbi, 
+                         obs.posterior = obs.posterior, 
+                         obs.logforward = obs.logforward, 
+                         prob.seq = prob.seq, 
+                         prob.seq.viterbi = prob.seq.viterbi , 
+                         T.low = T.low, 
+                         DT = DT,
+                         ovu = ovu, ovu.sd = ovu.sd,
+                         ovu.viterbi = ovu.viterbi,
+                         weights = weights,
+                         confidence = confidence,
+                         dev.sym = dev.sym,
+                         diff.em = diff.em)
+  
+  
+  if(debug){cat('end of most_likely_day_of_ovulation_hmm\n')}
+  return(results = hmm.results.all)
+}
+
 
 
 

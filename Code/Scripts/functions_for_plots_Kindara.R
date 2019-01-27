@@ -344,7 +344,7 @@ plot.tracking.history = function(d = days,
   min.temp = min(d$temperature, na.rm = TRUE)
   points(d$date, rep(n.lines, nrow(d))+(d$temperature-min.temp),
          type = 'l', col = 'gray90')
-  temp.col = temp.dict$colors[as.numeric(cut(d$temperature, temp.dict$values))]
+  temp.col = dict$temp$colors[as.numeric(cut(d$temperature, dict$temp$values))]
   points(d$date, rep(n.lines, nrow(d))+(d$temperature-min(d$temperature, na.rm = TRUE)),
          cex = 0.5, pch = 16, col = temp.col)
   
@@ -381,7 +381,7 @@ plot.tracking.history = function(d = days,
   line.cervix = show_tests*2 + 2
   points(d$date, rep(line.cervix, nrow(d))+d$cervix_height/5, pch = 21, 
          cex =  d$cervix_openness/3,
-         col = cervix.dict$colors[match(d$cervix_firmness, cervix.dict$index)]
+         col = dict$cervix$colors[match(d$cervix_firmness, dict$cervix$index)]
   )
   
   # sex

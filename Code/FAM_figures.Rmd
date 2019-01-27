@@ -32,13 +32,34 @@ source("Scripts/functions.R")
 
 ## History Kindara user
 
+```{r}
+source("Scripts/_setup_Kindara.R")
+```
+
 ```{r 1A load data}
-# TO DO
+load(paste0(IO$kindara_data_days,'02 processed/day104-110.Rdata'), verbose = TRUE)
 ```
 
 ```{r 1A}
-# TO DO
+
+user_id = '0a67d988dae24b669ab0644a656191d7'
+
+j = (days$user_id == user_id)
+start.date = as.Date('2015-01-01')
+j = which(j & (days$date >= start.date))
+
+d = days[j,]
+
+plot.tracking.history(d = d)
+
+pdf(paste0(IO$panels,'1A_history_kindara_example_',user_id,'.pdf'), useDingbats = FALSE, width = viz$pdf.full.width*0.75, height = viz$pdf.full.width/5)
+
+plot.tracking.history(d = d)
+
+dev.off()
+
 ```
+
 
 ## History Sympto user
 
@@ -1378,7 +1399,260 @@ ggsave(filename = paste0(IO$panels,"4_states_by_cycle_length_combined.pdf"), plo
 # Figure S5 : comparison with previous studies
 
 
+```{r visualizing previous studies with sympto and kindara}
+
+load(file =  paste0(IO$output_Rdata,"all_studies_for_phases_comparison.Rdata") , verbose = TRUE)
+all = all_studies
+
+
+g = ggplot(all, aes(col = study,x = mean, y = study)) + facet_grid( . ~ phase,scale = "free_x", space = "free_x")+
+  geom_point(shape = "|", size = 3, stroke = 6)+
+  guides(col = FALSE)+
+  scale_x_continuous(breaks = seq(8,46,by = 4))+
+#  geom_segment(aes(x = min, xend = max, yend = study), size = 0.5)+
+  geom_segment(aes(x = perc.2.5, xend = perc.97.5, yend = study), size = 2, alpha = 0.4)+
+  geom_segment(aes(x = perc.5, xend = perc.95, yend = study), size = 4, alpha = 0.4)+
+  geom_segment(aes(x = perc.10, xend = perc.90, yend = study), size = 5, alpha = 0.3)+
+#  geom_segment(aes(x = mean - SD, xend = mean + SD, yend = study), size = 0.5, alpha = 1)+
+#  geom_point(aes(x = mean - SD), shape = "|", size = 2.5)+ geom_point(aes(x = mean + SD), shape = "|", size = 2.5)+
+  xlab("duration")+ ylab("")+
+  theme_light()
+g
+
+ggsave(filename = paste0(IO$panels,"S5_cycle_phases_comparison_with_prev_studies.pdf"),plot = g, width = 6, height = 4)
+
+
+g = ggplot(all, aes(col = study,x = range_95, y = study)) + facet_grid( . ~ phase,scale = "free_x", space = "free_x")+
+  geom_point(shape = "|", size = 3, stroke = 4)+
+  geom_point(aes(x = range_90), shape = "*", size = 3, stroke = 4)+
+  geom_point(aes(x = range_80), shape = 16, size = 1)+
+  geom_point(aes(x = 0), shape = 16, size = 0,alpha = 0)+
+  scale_x_continuous(breaks = seq(0,46,by = 4), expand = c(0,1))+
+  guides(col = FALSE)+
+  xlab("range")+ ylab("")+
+  theme_light()
+g
+
+ggsave(filename = paste0(IO$panels,"S5_cycle_phases_range_comparison_with_prev_studies.pdf"),plot = g, width = 6, height = 4)
+
+
+
+g = ggplot(all, aes(fill = study,y = range_95, x = study))+ coord_flip() + facet_grid( . ~ phase,scale = "free_x", space = "free_x")+
+  geom_bar(stat = "identity", alpha = 0.3, width = 0.5)+
+  geom_bar(aes(y = range_90),stat = "identity", alpha = 0.3, width = 0.75)+
+  geom_bar(aes(y = range_80),stat = "identity", alpha = 0.3, width = 1)+
+  scale_y_continuous(breaks = seq(0,46,by = 4))+
+  guides(fill = FALSE)+
+  theme_light()
+g
+
+
+
+
+n_cycles = unique(all[,c("study","n.cycles")])
+
+g = ggplot(n_cycles, aes(fill = study,y = n.cycles/1000, x = study)) + coord_flip()+
+  facet_grid( . ~ "# of cycles",scale = "free_x", space = "free_x")+
+  geom_bar(stat = "identity")+
+  guides(fill = FALSE)+
+  scale_y_continuous(breaks = seq(0,round(max(n_cycles$n.cycles/1000)/10)*10,len = 3))+
+  xlab("")+ ylab("(Thousands)")+
+  theme_light()
+g
+
+ggsave(filename = paste0(IO$panels,"S5_cycle_phases_comparison_with_prev_studies_n_cycles.pdf"),plot = g, width = 3, height = 4)
+
+
+```
+
+
 # Figure S6 : impact of noise and missing data on the estimations
 
+## Noise
+
+
+
+```{r impact_of_noise visualizing results of noisy HMM, cache = TRUE}
+
+load( file = paste0(IO$output_Rdata, "RES_1.Rdata"), verbose = TRUE)
+
+
+xlim.max = 20
+
+g.noise = ggplot(RES, aes(x = ovu.diff, fill = noise))
+g.noise = g.noise + geom_histogram(bins = 100) + 
+  facet_grid(noise.r ~.) + 
+  scale_fill_gradient(low = "gray30", high = "tomato")+
+  guides(fill=FALSE)+  
+  scale_y_continuous(breaks = seq(0,100,by =30))+
+  theme(strip.text.y = element_text(angle = 0))+
+  #ggtitle("difference in ovulation estimation") + 
+  xlab("Diff. in ovu. est. (no noise - noise) [days]") + xlim(-xlim.max,xlim.max) 
+
+g.noise
+
+w = 15
+ggsave(filename = paste0(IO$panels,"S6_noise_hist.pdf"), g.noise, width = w, height = w/2, units = "cm")
+
+
+
+g = ggplot(RES, aes(x = dev.sym, fill = factor(noise)))
+g + geom_histogram(bins = 50)  + facet_grid(noise~.)
+
+
+g.noise.scatter = ggplot(RES, aes(x = abs(ovu.diff), y = ovu.sd.no.noise, col = noise))
+g.noise.scatter = g.noise.scatter  + 
+  geom_abline(slope = 1, intercept = 0, col = "gray")+ 
+  geom_point(size = 0.5) + 
+  scale_color_gradient(low = "gray30", high = "tomato")+
+  facet_wrap(noise.r ~., ncol = 5)+
+  xlab("Abs. diff. in ovu. est. (no noise - noise) [days]")+
+  ylab("Uncertainty on ovulation est. (no noise)")+
+  guides(col=FALSE)  + xlim(0,xlim.max) 
+
+g.noise.scatter
+
+
+ggsave(paste0(IO$panels,"S6_noise_scatter.pdf"), g.noise.scatter, width = w, height = w/2, units = "cm")
+```
+
+
+
+
+```{r impact_of_noise visualizing results of conservative HMM , cache = TRUE}
+
+load( file = paste0(IO$output_Rdata, "RES_2.Rdata"), verbose = TRUE)
+
+
+g.cons = ggplot(RES.c, aes(x = ovu.diff, fill = C))
+g.cons = g.cons + geom_histogram(bins = 100) + 
+  facet_grid(C ~.) + 
+  scale_fill_gradient(low = "gray30", high = "slateblue1")+
+  guides(fill=FALSE)+
+  scale_y_continuous(breaks = seq(0,100,by =50))+
+  theme(strip.text.y = element_text(angle = 0))+
+  #ggtitle("difference in ovulation estimation") + 
+  xlab("Diff. in ovu. est. (uniform - non-uniform) [days]") + xlim(-xlim.max, xlim.max) 
+
+g.cons
+
+w = 15
+ggsave(paste0(IO$panels,"S6_cons_hist.pdf"), g.cons, width = w, height = w/2, units = "cm")
+
+
+
+g.cons.scatter = ggplot(RES.c, aes(x = abs(ovu.diff), y = ovu.sd.no.noise, col = C))
+g.cons.scatter = g.cons.scatter  + 
+  geom_abline(slope = 1, intercept = 0, col = "gray")+ 
+  geom_point(size = 0.5) + 
+  scale_color_gradient(low = "gray30", high = "slateblue1")+
+  facet_wrap(C ~., ncol = 5)+
+  xlab("Abs. diff. in ovu. est. (uniform - non-uniform) [days]")+
+  ylab("Uncertainty on ovulation est. (uniform)")+
+  guides(col=FALSE)+ xlim(0,xlim.max) 
+
+g.cons.scatter
+
+
+ggsave(paste0(IO$panels,"S6_cons_scatter.pdf"), g.cons.scatter, width = w, height = w/2, units = "cm")
+
+
+
+```
+
+
+
+```{r impact_of_noise visualizing results of random emission HMM , cache = TRUE}
+
+
+load(file = paste0(IO$output_Rdata, "RES_3.Rdata"), verbose = TRUE)
+
+g.em = ggplot(RES.e, aes(x = ovu.diff, fill = noise))
+g.em = g.em + geom_histogram(bins = 100) + 
+  facet_grid(noise.r ~.) + 
+  scale_fill_gradient(low = "gray30", high = "green3")+
+  guides(fill=FALSE)+
+  scale_y_continuous(breaks = seq(0,100,by =30))+
+  theme(strip.text.y = element_text(angle = 0))+
+  #ggtitle("difference in ovulation estimation") + 
+  xlab("Diff. in ovu. est. (no noise - noise) [days]") + xlim(-xlim.max, xlim.max) 
+
+g.em
+
+w = 15
+ggsave(paste0(IO$panels,"S6_emission_hist.pdf"), g.em, width = w, height = w/2, units = "cm")
+
+g.em.scatter = ggplot(RES.e, aes(x = abs(ovu.diff), y = ovu.sd.no.noise, col = noise.r))
+g.em.scatter = g.em.scatter  + 
+  geom_abline(slope = 1, intercept = 0, col = "gray")+ 
+  geom_point(size = 0.5) + 
+  scale_color_gradient(low = "gray30", high = "green3")+
+  facet_wrap(noise.r ~., ncol = 5)+
+  xlab("Abs. diff. in ovu. est. (no noise - noise) [days]")+
+  ylab("Uncertainty on ovulation est. (no noise)")+
+  guides(col=FALSE) + xlim(0,xlim.max) 
+
+g.em.scatter
+
+
+w = 15
+ggsave(paste0(IO$panels,"S6_emission_scatter.pdf"), g.em.scatter, width = w, height = w/2, units = "cm")
+
+
+
+g.em.sd = ggplot(RES.e, aes(x = ovu.sd, fill = noise))
+g.em.sd = g.em.sd + geom_histogram(bins = 100) + 
+  facet_grid(noise.r ~.) + 
+  scale_fill_gradient(low = "gray30", high = "green3")+
+  guides(fill=FALSE)+
+  scale_y_continuous(breaks = seq(0,100,by =30))+
+  theme(strip.text.y = element_text(angle = 0))+
+  #ggtitle("difference in ovulation estimation") + 
+  xlab("Ovu. est. uncertainty [days]") 
+
+g.em.sd
+
+
+
+g.em.diff = ggplot(RES.e, aes(x = diff.em, fill = noise))
+g.em.diff = g.em.diff + geom_histogram(bins = 100) + 
+  facet_grid(noise.r ~.) + 
+  scale_fill_gradient(low = "gray30", high = "green3")+
+  guides(fill=FALSE)+
+  scale_y_continuous(breaks = seq(0,100,by =30))+
+  theme(strip.text.y = element_text(angle = 0))+
+  #ggtitle("difference in ovulation estimation") + 
+  xlab("Ovu. est. uncertainty [days]") 
+
+g.em.diff
+
+
+
+```
+
+
+## missing data
+
+```{r impact of missing data}
+
+
+load(file = paste0(IO$output_Rdata,"most_useful_sign_RES_l.Rdata"), verbose = TRUE)
+
+
+g = ggplot(RES_l, aes(fill = percent_missing, col = percent_missing, y = value, x = percent_missing_f)) + 
+  geom_hline(yintercept = 0, col = "gray70", size = 1)+
+  coord_flip() + geom_boxplot(outlier.size = 0.5, alpha = 0.5) + 
+  facet_grid(missing_feature ~ metric, scale = "free")+ 
+  scale_fill_gradient(low = "gray20",high = "tomato") +  
+  scale_color_gradient(low = "gray20",high = "tomato") + 
+  guides(fill = FALSE, col = FALSE)+
+  ylab("comparison with complete profiles: difference [ovulation time] or log2(ratio) [sd and confidence]") + xlab("% of missing data")+
+  theme_light()
+
+g
+
+ggsave(filename = paste0(IO$panels,"S6_most_useful_sign_to_estimate_ovulation.pdf"), plot = g, width = 12, height = 3)
+
+```
 
 

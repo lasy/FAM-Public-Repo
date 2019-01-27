@@ -1,11 +1,11 @@
 ---
-title: "Estimation Quality"
+title: "State probability by cycle length"
 author: "Laura Symul"
 date: "1/25/2019"
 output: html_document
 ---
 
-# Estimation parameters: Temperature shift, uncertainty and confidence score
+# State probability by cycle length
 
 ```{r state_by_cycle_length setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, cache = TRUE)

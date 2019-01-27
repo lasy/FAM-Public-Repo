@@ -1,0 +1,550 @@
+---
+title: "Impact of noise on HMM estimations"
+author: "Laura Symul"
+date: "8/8/2018"
+output: html_document
+---
+
+```{r impact_of_noise setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r impact_of_noise sourcing functions, variables and libraries, include=FALSE}
+source("Scripts/_setup_Sympto.R")
+
+theme_set(theme_light())
+```
+
+
+# Loading & selecting data
+
+
+```{r impact_of_noise loading Sympto data, cache = TRUE}
+
+
+load(file = paste0(IO$sympto_data_02_standard_cycles,'users.Rdata'))
+load(file = paste0(IO$sympto_data_02_standard_cycles,'cycles.Rdata'))
+load(file = paste0(IO$sympto_data_02_standard_cycles,'cycledays.Rdata'))
+
+head(cycles)
+
+```
+
+
+```{r impact_of_noise selecting X cycles, cache = TRUE}
+
+X = 100
+
+cycle_ids = unique(cycles$cycle_id)
+
+selected_cycle_ids = cycle_ids
+selected_cycle_ids = cycle_ids[1:X]
+
+```
+
+
+```{r impact_of_noise showing the transition probabilities, cache= TRUE}
+
+hmm_par$cycle.states.transProbs
+
+```
+
+
+
+
+# Running the original HMM (= the HMM of the paper so far)
+
+```{r impact_of_noise running original HMM, cache = TRUE}
+
+#### HMM
+RES = data.frame()
+
+tic()
+for (cycle_id in selected_cycle_ids) {
+  #cat(cycle_id, '\n')
+  j = which(cycledays$cycle_id == cycle_id)
+  cycletable = cycledays[j, ]
+  
+  res = try(most_likely_day_of_ovulation_hmm(cycletable = cycletable,
+                                         debug = FALSE, no.print = TRUE),
+            silent = TRUE)
+  
+  if(typeof(res)!= 'character'){
+    res$cycle_id = cycle_id
+    line = data.frame(
+      cycle_id = cycle_id, 
+      ovu = res$ovu, 
+      ovu.sd = res$ovu.sd,
+      ovu.viterbi = res$ovu.viterbi, 
+      confidence = res$confidence,
+      sequence = paste(res$obs.viterbi, collapse = " "))
+    RES = rbind(RES, line)
+    }
+  
+}
+toc()
+head(RES)
+RES.o = RES
+
+```
+
+
+
+# Modifying the HMM transition probabilities
+
+For each cycle, we run Y different HMM with noise on the transistion probabilities
+
+
+```{r  impact_of_noise running modified HMM with changing transition probabilities, cache = TRUE}
+
+Y = 9
+
+RES = data.frame()
+
+tic()
+for (cycle_id in selected_cycle_ids) {
+  #cat(cycle_id, '\n')
+  j = which(cycledays$cycle_id == cycle_id)
+  cycletable = cycledays[j, ]
+  
+  for(y in 1:Y){
+    #cat("\t", y, "\n")
+    
+    #noise = -log10(y/Y*10)+1
+    noise = y/Y *3
+    
+    res = try(most_likely_day_of_ovulation_hmm(cycletable = cycletable,
+                                               debug = TRUE, no.print = TRUE,
+                                               random_transition_probabilities = TRUE,
+                                               noise = noise),
+              silent = TRUE)
+    
+    if(typeof(res)!= 'character'){
+      #cat("\t\there\n")
+      res$cycle_id = cycle_id
+      line = data.frame(
+        cycle_id = cycle_id, 
+        y = y,
+        noise = noise,
+        dev.sym = res$dev.sym,
+        ovu = res$ovu, 
+        ovu.sd = res$ovu.sd,
+        ovu.viterbi = res$ovu.viterbi, 
+        confidence = res$confidence,
+        sequence = paste(res$obs.viterbi, collapse = " "))
+      RES = rbind(RES, line)
+    }
+    
+  }
+  
+}
+toc()
+
+m = match(RES$cycle_id, RES.o$cycle_id)
+RES$ovu.no.noise = RES.o$ovu[m]
+RES$ovu.diff = RES$ovu.no.noise - RES$ovu
+RES$ovu.sd.no.noise = RES.o$ovu.sd[m]
+RES$sequence.no.noise = RES.o$sequence[m]
+RES$noise.r = round(RES$noise, digits = 2)
+
+head(RES, 20)
+
+```
+
+```{r impact_of_noise  visualisation params, cache = TRUE}
+
+save(RES, file = paste0(IO$output_Rdata, "RES_1.Rdata"))
+
+```
+
+
+
+
+```{r impact_of_noise visualizing results of noisy HMM, cache = TRUE}
+
+xlim.max = 20
+
+g.noise = ggplot(RES, aes(x = ovu.diff, fill = noise))
+g.noise = g.noise + geom_histogram(bins = 100) + 
+  facet_grid(noise.r ~.) + 
+  scale_fill_gradient(low = "gray30", high = "tomato")+
+  guides(fill=FALSE)+  
+  scale_y_continuous(breaks = seq(0,100,by =30))+
+  theme(strip.text.y = element_text(angle = 0))+
+  #ggtitle("difference in ovulation estimation") + 
+  xlab("Diff. in ovu. est. (no noise - noise) [days]") + xlim(-xlim.max,xlim.max) 
+
+g.noise
+
+
+
+g = ggplot(RES, aes(x = dev.sym, fill = factor(noise)))
+g + geom_histogram(bins = 50)  + facet_grid(noise~.)
+
+
+g.noise.scatter = ggplot(RES, aes(x = abs(ovu.diff), y = ovu.sd.no.noise, col = noise))
+g.noise.scatter = g.noise.scatter  + 
+  geom_abline(slope = 1, intercept = 0, col = "gray")+ 
+  geom_point(size = 0.5) + 
+  scale_color_gradient(low = "gray30", high = "tomato")+
+  facet_wrap(noise.r ~., ncol = 5)+
+  xlab("Abs. diff. in ovu. est. (no noise - noise) [days]")+
+  ylab("Uncertainty on ovulation est. (no noise)")+
+  guides(col=FALSE)  + xlim(0,xlim.max) 
+
+g.noise.scatter
+
+```
+
+
+## Conclusion:
+
+Even large variations in transition probabilities don't have a big impact on the ovulation day estimation. Also, the difference in ovulation day estimation is smaller than the estimated uncertainty when the noise is reasonable (= the transition probabilities are not completely random).
+
+
+
+
+# What about the state sequence for the other states (not just ovulation)?
+
+```{r impact_of_noise checking the state sequence differences, cache = TRUE}
+
+STD = data.frame()
+
+#plot(c(0,50),c(0,nrow(RES)), type = "n")
+for(i in 1:nrow(RES)){
+  seq = RES$sequence[i]
+  seq = unlist(strsplit(as.character(seq), split = " "))
+  seq.num = match(seq, hmm_par$cycle.states)
+  
+  seq.o = RES$sequence.no.noise[i]
+  seq.o = unlist(strsplit(as.character(seq.o), split = " "))
+  seq.o.num = match(seq.o, hmm_par$cycle.states)
+  
+  #points(rep(i,length(seq)), col = cycle.states.colors[seq.num], pch = "-")
+  
+  dist.seq = sum(seq.num != seq.o.num)
+  n.back.trans = sum(diff(seq.num) == -1)
+  period.duration = sum(seq.num %in% c(1,2))
+  period.duration.o = sum(seq.o.num %in% c(1,2))
+  
+  line = data.frame(cycle_id = RES$cycle_id[i],
+                    y = RES$y[i],
+                    noise = RES$noise[i],
+                    dist.seq = dist.seq,
+                    cycle_length = length(seq.num),
+                    n.back.trans = n.back.trans,
+                    period.duration = period.duration,
+                    period.duration.change = period.duration-period.duration.o)
+  STD = rbind(STD, line)
+  
+}
+
+STD$dist.seq.f = STD$dist.seq/STD$cycle_length * 100
+
+
+g = ggplot(STD, aes(x = dist.seq.f, fill = factor(noise)))
+g + geom_histogram() + facet_grid(noise~.)
+
+
+g = ggplot(STD, aes(x = n.back.trans, fill = factor(noise)))
+g + geom_histogram() + facet_grid(noise ~.)
+
+
+g = ggplot(STD, aes(x = period.duration.change, fill = factor(noise)))
+g + geom_histogram() + facet_grid(noise ~.)
+
+```
+
+## Conclusion
+
+Non-uniform (random) transition probabilities have an impact on the state sequence (probably a larger impact on the state sequence than on the estimation of the ovulation day). Especially, we can see that it can lead to a lot more back & forth transitions between the substates of the ovulatory phase. 
+It does not affect too much the period duration estimation (>> the observations are still leading the state transition when decoding).
+
+It could be interesting to check how the more "conservative" transition probabilities (e.g. the probability to stay in a state is higher than the probability to shift to another state) would impact the sequence.
+
+
+# More conservative transition probabilities
+
+Instead of just randomizing transition probabilities, we could check how increasing the probabilities to stay in a given state
+
+
+```{r impact_of_noise running modified HMM conservative transition probabilities, cache = TRUE}
+
+Y = 10
+
+RES.c = data.frame()
+#trans.probs = data.frame()
+
+tic()
+for (cycle_id in selected_cycle_ids) {
+  #cat(cycle_id, '\n')
+  j = which(cycledays$cycle_id == cycle_id)
+  cycletable = cycledays[j, ]
+  
+  for(y in 1:Y){
+    #cat("\t", y, "\n")
+    
+    C = y
+    
+    res = try(most_likely_day_of_ovulation_hmm(cycletable = cycletable,
+                                               debug = FALSE, no.print = TRUE,
+                                               conservative_transition_probabilities = TRUE,
+                                               C = C),
+              silent = TRUE)
+    
+    
+    if(typeof(res)!= 'character'){
+      #cat("\t\there\n")
+      res$cycle_id = cycle_id
+      line = data.frame(
+        cycle_id = cycle_id, 
+        y = y,
+        C = C,
+        dev.sym = res$dev.sym,
+        ovu = res$ovu, 
+        ovu.sd = res$ovu.sd,
+        ovu.viterbi = res$ovu.viterbi, 
+        confidence = res$confidence,
+        sequence = paste(res$obs.viterbi, collapse = " "))
+      RES.c = rbind(RES.c, line)
+    }
+    
+  }
+  
+}
+toc()
+
+
+m = match(RES.c$cycle_id, RES.o$cycle_id)
+RES.c$ovu.no.noise = RES.o$ovu[m]
+RES.c$ovu.diff = RES.c$ovu.no.noise - RES.c$ovu
+RES.c$ovu.sd.no.noise = RES.o$ovu.sd[m]
+RES.c$sequence.no.noise = RES.o$sequence[m]
+
+head(RES.c, 20)
+
+save(RES.c, file = paste0(IO$output_Rdata, "RES_2.Rdata"))
+
+
+```
+
+
+
+
+```{r impact_of_noise  visualizing results of conservative HMM, cache = TRUE}
+
+g = ggplot(RES.c, aes(x = ovu.diff, fill = C))
+g + geom_histogram(bins = 50) + xlim(-2.5,2.5) + facet_grid(C~.)
+
+
+g = ggplot(RES.c, aes(x = dev.sym, fill = C))
+g + geom_histogram(bins = 50)  + facet_grid(C~.)
+
+
+g = ggplot(RES.c, aes(x = abs(ovu.diff), y = ovu.sd.no.noise, col = C))
+g  + geom_abline(slope = 1, intercept = 0)+ geom_point(size = 0.5) + facet_wrap(C ~.)
+
+
+```
+
+
+
+
+
+
+```{r impact_of_noise  checking the state sequence differences for conservative hmm, cache = TRUE}
+
+STD.c = data.frame()
+
+#plot(c(0,50),c(0,nrow(RES)), type = "n")
+for(i in 1:nrow(RES.c)){
+  seq = RES.c$sequence[i]
+  seq = unlist(strsplit(as.character(seq), split = " "))
+  seq.num = match(seq, hmm_par$cycle.states)
+  
+  seq.o = RES.c$sequence.no.noise[i]
+  seq.o = unlist(strsplit(as.character(seq.o), split = " "))
+  seq.o.num = match(seq.o, hmm_par$cycle.states)
+  
+  #points(rep(i,length(seq)), col = cycle.states.colors[seq.num], pch = "-")
+  
+  dist.seq = sum(seq.num != seq.o.num)
+  n.back.trans = sum(diff(seq.num) == -1)
+  period.duration = sum(seq.num %in% c(1,2))
+  period.duration.o = sum(seq.o.num %in% c(1,2))
+  
+  line = data.frame(cycle_id = RES.c$cycle_id[i],
+                    y = RES.c$y[i],
+                    C = RES.c$C[i],
+                    dist.seq = dist.seq,
+                    cycle_length = length(seq.num),
+                    n.back.trans = n.back.trans,
+                    period.duration = period.duration,
+                    period.duration.change = period.duration-period.duration.o)
+  STD.c = rbind(STD.c, line)
+  
+}
+
+STD.c$dist.seq.f = STD.c$dist.seq/STD.c$cycle_length * 100
+
+
+g = ggplot(STD.c, aes(x = dist.seq.f, fill = factor(C)))
+g + geom_histogram() + facet_grid(C~.)
+
+
+g = ggplot(STD.c, aes(x = n.back.trans, fill = factor(C)))
+g + geom_histogram() + facet_grid(C ~.)
+
+
+
+
+
+```
+
+
+
+
+## Conclusion
+
+It actually changes very little in this case as well.
+The constrain on the end state and the emission probabilities seem to make the ovulation detection quite robust.
+
+
+What would be interesting, would be to modify the emission probabilities and check if they have a stronger effect on the ovulation detection.
+
+
+
+
+# Noise on the emission probabilities
+
+
+
+```{r impact_of_noise running modified HMM with changing emission probabilities, cache = TRUE}
+
+Y = 9
+
+RES.e = data.frame()
+
+tic()
+for (cycle_id in selected_cycle_ids) {
+  #cat(cycle_id, '\n')
+  j = which(cycledays$cycle_id == cycle_id)
+  cycletable = cycledays[j, ]
+  
+  for(y in 1:Y){
+    #cat("\t", y, "\n")
+    
+    #noise = -log10(y/Y*10)+1
+    noise = y/Y * 3
+    
+    res = try(most_likely_day_of_ovulation_hmm(cycletable = cycletable,
+                                               debug = FALSE, no.print = TRUE,
+                                               random_emission_probabilities = TRUE,
+                                               noise = noise),
+              silent = TRUE)
+    
+    if(typeof(res)!= 'character'){
+      #cat("\t\there\n")
+      res$cycle_id = cycle_id
+      line = data.frame(
+        cycle_id = cycle_id, 
+        y = y,
+        noise = noise,
+        dev.sym = res$dev.sym,
+        diff.em = res$diff.em,
+        ovu = res$ovu, 
+        ovu.sd = res$ovu.sd,
+        ovu.viterbi = res$ovu.viterbi, 
+        confidence = res$confidence,
+        sequence = paste(res$obs.viterbi, collapse = " "))
+      RES.e = rbind(RES.e, line)
+    }
+    
+  }
+  
+}
+toc()
+
+m = match(RES.e$cycle_id, RES.o$cycle_id)
+RES.e$ovu.no.noise = RES.o$ovu[m]
+RES.e$ovu.diff = RES.e$ovu.no.noise - RES.e$ovu
+RES.e$ovu.sd.no.noise = RES.o$ovu.sd[m]
+RES.e$sequence.no.noise = RES.o$sequence[m]
+RES.e$noise.r = round(RES.e$noise, digits = 2)
+
+head(RES.e, 20)
+
+
+
+save(RES.e, file = paste0(IO$output_Rdata, "RES_3.Rdata"))
+
+```
+
+
+
+```{r impact_of_noise visualizing results of random emission HMM , cache = TRUE}
+
+
+g.em = ggplot(RES.e, aes(x = ovu.diff, fill = noise))
+g.em = g.em + geom_histogram(bins = 100) + 
+  facet_grid(noise.r ~.) + 
+  scale_fill_gradient(low = "gray30", high = "green3")+
+  guides(fill=FALSE)+
+  scale_y_continuous(breaks = seq(0,100,by =30))+
+  theme(strip.text.y = element_text(angle = 0))+
+  #ggtitle("difference in ovulation estimation") + 
+  xlab("Diff. in ovu. est. (no noise - noise) [days]") + xlim(-xlim.max, xlim.max) 
+
+g.em
+
+
+g.em.scatter = ggplot(RES.e, aes(x = abs(ovu.diff), y = ovu.sd.no.noise, col = noise.r))
+g.em.scatter = g.em.scatter  + 
+  geom_abline(slope = 1, intercept = 0, col = "gray")+ 
+  geom_point(size = 0.5) + 
+  scale_color_gradient(low = "gray30", high = "green3")+
+  facet_wrap(noise.r ~., ncol = 5)+
+  xlab("Abs. diff. in ovu. est. (no noise - noise) [days]")+
+  ylab("Uncertainty on ovulation est. (no noise)")+
+  guides(col=FALSE) + xlim(0,xlim.max) 
+
+g.em.scatter
+
+
+
+
+g.em.sd = ggplot(RES.e, aes(x = ovu.sd, fill = noise))
+g.em.sd = g.em.sd + geom_histogram(bins = 100) + 
+  facet_grid(noise.r ~.) + 
+  scale_fill_gradient(low = "gray30", high = "green3")+
+  guides(fill=FALSE)+
+  scale_y_continuous(breaks = seq(0,100,by =30))+
+  theme(strip.text.y = element_text(angle = 0))+
+  #ggtitle("difference in ovulation estimation") + 
+  xlab("Ovu. est. uncertainty [days]") 
+
+g.em.sd
+
+
+
+g.em.diff = ggplot(RES.e, aes(x = diff.em, fill = noise))
+g.em.diff = g.em.diff + geom_histogram(bins = 100) + 
+  facet_grid(noise.r ~.) + 
+  scale_fill_gradient(low = "gray30", high = "green3")+
+  guides(fill=FALSE)+
+  scale_y_continuous(breaks = seq(0,100,by =30))+
+  theme(strip.text.y = element_text(angle = 0))+
+  #ggtitle("difference in ovulation estimation") + 
+  xlab("Ovu. est. uncertainty [days]") 
+
+g.em.diff
+
+
+
+```
+
+
+
+

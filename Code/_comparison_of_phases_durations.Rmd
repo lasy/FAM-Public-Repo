@@ -1,0 +1,189 @@
+---
+title: Cycle length, follicular and luteal phases durations - comparison with previous
+  studies
+author: "Laura Symul"
+date: "1/22/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+```
+
+
+
+
+```{r functions and libraries etc, include=FALSE}
+rm(list = ls())
+source("Scripts/libraries.R")
+source("Scripts/functions.R")
+source("Scripts/variables.R")
+
+theme_set(theme_light())
+```
+
+```{r parameters, include = FALSE}
+IO$sympto_data_03_reliable_ovulation_estimation 
+IO$kindara_data_cycles 
+```
+
+
+
+# Comparison of the cycle phases duration
+
+## Previous studies
+
+```{r load excel file}
+library("openxlsx")
+
+prev = read.xlsx(xlsxFile = paste0(IO$other_input_data,"cycle length follicular and luteal phase durations.xlsx"))
+phases = c("cycle length","ovulation","luteal") 
+prev$phase = factor(prev$phase, levels = phases)
+
+```
+
+
+```{r visualizing previous studies}
+
+g = ggplot(prev, aes(col = study,x = mean, y = study)) + facet_grid( . ~ phase,scale = "free_x", space = "free_x")+
+  geom_point(shape = "|", size = 4, stroke = 6)+
+  guides(col = FALSE)+
+  scale_x_continuous(breaks = seq(8,40,by = 2))+
+  geom_segment(aes(x = min, xend = max, yend = study), size = 0.5)+
+  geom_segment(aes(x = perc.2.5, xend = perc.97.5, yend = study), size = 1.5, alpha = 0.4)+
+  geom_segment(aes(x = perc.5, xend = perc.95, yend = study), size = 3, alpha = 0.5)+
+  geom_segment(aes(x = perc.10, xend = perc.90, yend = study), size = 4, alpha = 0.6)+
+  geom_segment(aes(x = mean - SD, xend = mean + SD, yend = study), size = 5, alpha = 0.8)+
+  theme_light()
+g
+
+```
+
+## This study - Sympto
+
+```{r load sympto data}
+load(file = paste0(IO$sympto_data_03_reliable_ovulation_estimation,'cycles.Rdata'), verbose = TRUE)
+cycles = cycles[cycles$reliable.ovu.est,]
+cycles_sympto = cycles
+
+```
+
+
+```{r computing the phases duration}
+
+all = prev
+
+phases.sympto =  c("cycle_length","ovu","luteal.duration")
+
+
+for(i in 1:3){
+  new.line = data.frame(year = 2019,study = "Current study (Sympto)",method = "FAM",exclusion = "ovulation not confirmed",
+                        age = paste(quantile(cycles_sympto$age_at_obs, p = c(0.1,0.9), na.rm = TRUE), collapse = "-"), 
+                        n.individuals = length(unique(cycles_sympto$user_id)),
+                        n.cycles.per.individual  = length(unique(cycles_sympto$cycle_id))/length(unique(cycles_sympto$user_id)),
+                        n.cycles = length(unique(cycles_sympto$cycle_id)),
+                        phase = phases[i],
+                        mean = eval(parse(text = paste0("mean(cycles_sympto$",phases.sympto[i],",na.rm = TRUE)"))),
+                        median = eval(parse(text = paste0("median(cycles_sympto$",phases.sympto[i],",na.rm = TRUE)"))),
+                        SD = eval(parse(text = paste0("sd(cycles_sympto$",phases.sympto[i],",na.rm = TRUE)"))),
+                        min = NA,
+                        perc.2.5 = eval(parse(text = paste0("quantile(cycles_sympto$",phases.sympto[i],",p = 0.025,na.rm = TRUE)"))),
+                        perc.5 = eval(parse(text = paste0("quantile(cycles_sympto$",phases.sympto[i],",p = 0.05,na.rm = TRUE)"))),
+                        perc.10 = eval(parse(text = paste0("quantile(cycles_sympto$",phases.sympto[i],",p = 0.1,na.rm = TRUE)"))),
+                        perc.90 = eval(parse(text = paste0("quantile(cycles_sympto$",phases.sympto[i],",p = 0.9,na.rm = TRUE)"))),
+                        perc.95 = eval(parse(text = paste0("quantile(cycles_sympto$",phases.sympto[i],",p = 0.95,na.rm = TRUE)"))),
+                        perc.97.5 = eval(parse(text = paste0("quantile(cycles_sympto$",phases.sympto[i],",p = 0.975,na.rm = TRUE)"))),
+                        max = NA
+                        )
+  all = rbind(all, new.line)
+}
+
+all.sympto = all
+
+
+```
+
+
+```{r visualizing previous studies with sympto}
+
+g = ggplot(all, aes(col = study,x = mean, y = study)) + facet_grid( . ~ phase,scale = "free_x", space = "free_x")+
+  geom_point(shape = "|", size = 4, stroke = 6)+
+  guides(col = FALSE)+
+  scale_x_continuous(breaks = seq(8,40,by = 2))+
+  geom_segment(aes(x = min, xend = max, yend = study), size = 0.5)+
+  geom_segment(aes(x = perc.2.5, xend = perc.97.5, yend = study), size = 1.5, alpha = 0.4)+
+  geom_segment(aes(x = perc.5, xend = perc.95, yend = study), size = 3, alpha = 0.5)+
+  geom_segment(aes(x = perc.10, xend = perc.90, yend = study), size = 4, alpha = 0.6)+
+  geom_segment(aes(x = mean - SD, xend = mean + SD, yend = study), size = 5, alpha = 0.8)+
+  theme_light()
+g
+
+```
+
+
+
+## This study - Kindara
+
+```{r load kindara data}
+load(paste0(IO$kindara_data_cycles,"06 CYCLES with reliable ovulation estimation.Rdata"),verbose = TRUE)
+cycles_kindara = CYCLES
+```
+
+
+```{r computing the phases duration}
+
+all = all.sympto
+
+phases.kindara =  c("length","ovu","luteal.duration")
+
+
+for(i in 1:3){
+  new.line = data.frame(year = 2019,study = "Current study (Kindara)",method = "FAM",exclusion = "ovulation not confirmed",
+                        age = paste(quantile(cycles_kindara$age_at_obs, p = c(0.1,0.9), na.rm = TRUE), collapse = "-"), 
+                        n.individuals = length(unique(cycles_kindara$user_id)),
+                        n.cycles.per.individual  = length(unique(cycles_kindara$cycle_id))/length(unique(cycles_kindara$user_id)),
+                        n.cycles = length(unique(cycles_kindara$cycle_id)),
+                        phase = phases[i],
+                        mean = eval(parse(text = paste0("mean(cycles_kindara$",phases.kindara[i],",na.rm = TRUE)"))),
+                        median = eval(parse(text = paste0("median(cycles_kindara$",phases.kindara[i],",na.rm = TRUE)"))),
+                        SD = eval(parse(text = paste0("sd(cycles_kindara$",phases.kindara[i],",na.rm = TRUE)"))),
+                        min = NA,
+                        perc.2.5 = eval(parse(text = paste0("quantile(cycles_kindara$",phases.kindara[i],",p = 0.025,na.rm = TRUE)"))),
+                        perc.5 = eval(parse(text = paste0("quantile(cycles_kindara$",phases.kindara[i],",p = 0.05,na.rm = TRUE)"))),
+                        perc.10 = eval(parse(text = paste0("quantile(cycles_kindara$",phases.kindara[i],",p = 0.1,na.rm = TRUE)"))),
+                        perc.90 = eval(parse(text = paste0("quantile(cycles_kindara$",phases.kindara[i],",p = 0.9,na.rm = TRUE)"))),
+                        perc.95 = eval(parse(text = paste0("quantile(cycles_kindara$",phases.kindara[i],",p = 0.95,na.rm = TRUE)"))),
+                        perc.97.5 = eval(parse(text = paste0("quantile(cycles_kindara$",phases.kindara[i],",p = 0.975,na.rm = TRUE)"))),
+                        max = NA
+                        )
+  all = rbind(all, new.line)
+}
+
+
+
+```
+
+
+## Summary and save data
+
+
+```{r ordering studies by year}
+
+all$study_o = all$study
+all$study = paste0(all$study, ", ", all$year)
+all$study = factor(all$study, levels = unique(all$study[order(all$year, all$n.cycles, decreasing = TRUE)]))
+all$phase_o = all$phase
+all$phase = c("cycle length","follicular phase","luteal phase")[all$phase]
+
+all$range_80 = all$perc.90 - all$perc.10
+all$range_90 = all$perc.95 - all$perc.5
+all$range_95 = all$perc.97.5 - all$perc.2.5
+
+
+all_studies = all
+
+save(all_studies, file =  paste0(IO$output_Rdata,"all_studies_for_phases_comparison.Rdata") )
+
+```
+
+

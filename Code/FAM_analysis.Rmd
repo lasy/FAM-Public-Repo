@@ -56,4 +56,18 @@ source("Scripts/functions.R")
 ```
 
 
+```{r child = '_comparison_of_phases_durations.Rmd', cache=TRUE}
+```
+
+
+```{r child = '_HMM_justification.Rmd', cache=TRUE}
+```
+
+
+```{r child = '_most_useful_signs_for_ovulation.Rmd', cache=TRUE}
+```
+
+
+
+
 
