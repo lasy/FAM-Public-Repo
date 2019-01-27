@@ -26,7 +26,8 @@ source("Scripts/functions.R")
 ```
 
 
-
+This file contains all the code for the analysis of the data for the figures. 
+The preprocessing of the original data and the ovulation estimation with the HMM are done in "Scripts/main_analysis_sympto.R" and in "Scripts/main_analysis_kindara.R"
 
 ```{r child = '_user_history.Rmd', cache=TRUE}
 ```

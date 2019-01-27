@@ -132,7 +132,7 @@ sex.names = c('Undefined', 'Unprotected Sex','Protected Sex')
 sex.colors = c(viz_cols$transparent, viz_cols$sex.red, viz_cols$sex.red)
 sex.bg = c(viz_cols$transparent, viz_cols$sex.red, viz_cols$transparent)
 sex.symbols = c(25,25,1)
-dict$sex. = data.frame(index = sex.numbers, 
+dict$sex = data.frame(index = sex.numbers, 
                       names = sex.names, 
                       colors = sex.colors,
                       bg = sex.bg,

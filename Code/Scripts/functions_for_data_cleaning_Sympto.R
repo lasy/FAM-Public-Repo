@@ -15,10 +15,10 @@ clean_user_table = function(sy_abo){
   rm(colnames.table)
   
   
-  users$creation_date = strptime(users$creation, format = date.format)
-  users$last_connection = strptime(users$lst_con, format = date.format)
-  users$last_sync = strptime(users$last_sync, format = date.format)
-  users$modif_settings = strptime(users$modif_settings, format = date.format)
+  users$creation_date = strptime(users$creation, format = par$date.format)
+  users$last_connection = strptime(users$lst_con, format = par$date.format)
+  users$last_sync = strptime(users$last_sync, format = par$date.format)
+  users$modif_settings = strptime(users$modif_settings, format = par$date.format)
   
   users = users[,-which(colnames(users) =='creation')]
   users = users[,-which(colnames(users) =='lst_con')]
@@ -28,7 +28,7 @@ clean_user_table = function(sy_abo){
   
   #expand features
   #users$country = countries$ct_name[match(users$country_id,countries$ct_id)]
-  users$type_txt = types.dict$types.en[match(users$type, types.dict$index)]
+  users$type_txt = dict$types$types.en[match(users$type, dict$types$index)]
   users$kg[users$kg == 0] = NA
   users$cm[users$cm == 0] = NA
   users$bmi = users$kg / (users$cm/100)^2
@@ -64,7 +64,7 @@ clean_cycle_table = function(sy_cycleinfo){
   
   cycles$first_day_of_cycle = as.Date("2000-01-01") + cycles$first_day_pos # - 1 
   cycles$cycle_id = paste0(cycles$user_id,'_',cycles$cycle_nb)
-  cycles$goal_txt = goals.dict$goals[match(cycles$goal, goals.dict$index)]
+  cycles$goal_txt = dict$goals$goals[match(cycles$goal, dict$goals$index)]
   cycles$temp_method_txt =  temp_method.dict$temp_method[match(cycles$temp_method, temp_method.dict$index)]
   cycles$method = billings.dict$billings.short[match(cycles$billings, billings.dict$index)]
   cycles$ref = as.logical(-cycles$ref+2)

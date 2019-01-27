@@ -16,7 +16,7 @@ for(b in bstart:nb){
   for (cycle_id in selected_cycle_ids[i.start:i.stop]) {
     #cat(cycle_id, '\n')
     rm(res)
-    filename = get_latest_filename(cycle_id = cycle_id, folder_path = res_folder)
+    filename = get_latest_filename(cycle_id = cycle_id, folder_path = IO$res_folder)
     load(filename)
     
     results.this.cycle = c()
@@ -60,8 +60,8 @@ for(b in bstart:nb){
       }
     }
   }
-  save(results.cycleday,file = paste0(global_path_Rdata,'batch/results_cycleday_',now,'_',b,'.Rdata'))
-  save(results.by.cycle,file = paste0(global_path_Rdata,'batch/results_by_cycle_',now,'_',b,'.Rdata'))
+  save(results.cycleday,file = paste0(IO$global_path_Rdata,'batch/results_cycleday_',now,'_',b,'.Rdata'))
+  save(results.by.cycle,file = paste0(IO$global_path_Rdata,'batch/results_by_cycle_',now,'_',b,'.Rdata'))
 }
 
 
@@ -70,8 +70,8 @@ for(b in bstart:nb){
 results.by.cycle.all = c()
 results.cycleday.all = c()
 for(b in 1:nb){
-  load(paste0(global_path_Rdata,'batch/results_cycleday_',now,'_',b,'.Rdata'))
-  load(paste0(global_path_Rdata,'batch/results_by_cycle_',now,'_',b,'.Rdata'))
+  load(paste0(IO$global_path_Rdata,'batch/results_cycleday_',now,'_',b,'.Rdata'))
+  load(paste0(IO$global_path_Rdata,'batch/results_by_cycle_',now,'_',b,'.Rdata'))
   if(b == 1){
     results.by.cycle.all = results.by.cycle
     results.cycleday.all = results.cycleday
@@ -80,11 +80,11 @@ for(b in 1:nb){
     results.cycleday.all = rbind(results.cycleday.all, results.cycleday)
   }
 }
-save(results.by.cycle.all,file = paste0(global_path_Rdata,'fit_results_by_cycle_all_',now,'.Rdata'))
-save(results.cycleday.all,file = paste0(global_path_Rdata,'fit_results_cycleday_all_',now,'.Rdata'))
+save(results.by.cycle.all,file = paste0(IO$global_path_Rdata,'fit_results_by_cycle_all_',now,'.Rdata'))
+save(results.cycleday.all,file = paste0(IO$global_path_Rdata,'fit_results_cycleday_all_',now,'.Rdata'))
 
-save(results.by.cycle.all,file = paste0('Rdata/fit_results_by_cycle_all_',now,'.Rdata'))
-save(results.cycleday.all,file = paste0('Rdata/fit_results_cycleday_all_',now,'.Rdata'))
+save(results.by.cycle.all,file = paste0(IO$restricted_data_folder,'fit_results_by_cycle_all_',now,'.Rdata'))
+save(results.cycleday.all,file = paste0(IO$restricted_data_folder,'fit_results_cycleday_all_',now,'.Rdata'))
 
 
 # bind cycle and cycledays tables with fit results
