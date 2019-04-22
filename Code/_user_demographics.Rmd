@@ -37,6 +37,7 @@ load(file = paste0(IO$kindara_data_accounts,'processed_cleaned_accounts_onefile.
 round(mean(accounts$age_registration, na.rm = TRUE), digits = 1)
 round(sd(accounts$age_registration, na.rm = TRUE), digits = 1)
 round(100 - (sum(is.na(accounts$age_registration))/nrow(accounts)*100))
+sum((accounts$age_registration<12) | (accounts$age_registration>60), na.rm = TRUE)
 ```
 
 
@@ -55,7 +56,7 @@ source("Scripts/_setup_Sympto.R")
 
 ```{r user_demographics load sympto data}
 
-load(paste0(IO$sympto_data_02_processed,'users.Rdata'), verbose = TRUE)
+load(paste0(IO$sympto_data_01_all_cycles_cleaned_and_processed,'users.Rdata'), verbose = TRUE)
 
 ```
 
